@@ -5,15 +5,20 @@ RedditDemand API — FastAPI backend for demand intelligence from Reddit.
 from contextlib import asynccontextmanager
 from datetime import datetime
 
+from pathlib import Path
+
 from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from database import close_pool, init_pool
 from models import HealthResponse
-from routers import alerts, search, threads
+from routers import alerts, search, threads, agent
 
-load_dotenv()
+# Load .env from the backend directory, then from cwd (so it works no matter how uvicorn is started)
+_env_path = Path(__file__).resolve().parent / ".env"
+load_dotenv(dotenv_path=_env_path)
+load_dotenv()  # fallback: .env in current working directory
 
 
 @asynccontextmanager
@@ -41,6 +46,7 @@ app.add_middleware(
 app.include_router(search.router, prefix="/search", tags=["search"])
 app.include_router(threads.router, prefix="/threads", tags=["threads"])
 app.include_router(alerts.router, prefix="/alerts", tags=["alerts"])
+app.include_router(agent.router, prefix="/agent", tags=["agent"])
 
 
 @app.get("/health", response_model=HealthResponse)

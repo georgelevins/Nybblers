@@ -108,3 +108,5 @@ __pycache__/
 
 zst/
 
+__pycache__/
+*.pyc

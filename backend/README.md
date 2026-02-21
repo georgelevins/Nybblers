@@ -9,7 +9,7 @@ FastAPI backend for RedditDemand — a demand intelligence platform that lets fo
 
 ## Setup
 
-1. Copy the example env file and fill in your values:
+1. Copy the example env file and fill in your values (include `ANTHROPIC_API_KEY` for the agent):
 
    ```bash
    cp .env.example .env
@@ -38,6 +38,7 @@ The API will be available at `http://localhost:8000`. Docs at `http://localhost:
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | GET | `/health` | Health check — returns status and timestamp |
+| POST | `/agent/run` | **AI agent** — `AgentRequest` (action, idea_text, constraints, context, retrieval) → `AgentResponse`. See `agent/README.md`. |
 | POST | `/search` | Semantic search — `{ "query": "...", "subreddit": "optional", "limit": 20 }` |
 | GET | `/threads/opportunities` | Opportunity view — posts by activity_ratio. Params: `subreddit`, `limit`, `min_activity_ratio` |
 | GET | `/threads/{id}` | Single thread with comments |

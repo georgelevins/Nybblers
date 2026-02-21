@@ -20,19 +20,33 @@ async def get_pool() -> asyncpg.Pool:
     return _pool
 
 
+def _is_placeholder_db_url(url: str) -> bool:
+    """True if URL looks like .env.example placeholder (not a real host)."""
+    if not url or not url.strip():
+        return True
+    lower = url.lower()
+    # Skip placeholder examples so app can start without a real DB
+    if "user:pass" in lower or "@host:" in lower or "host:5432" in lower:
+        return True
+    return False
+
+
 async def init_pool() -> None:
-    """Initialize the connection pool. Call on app startup."""
+    """Initialize the connection pool. Call on app startup. Skips if no DB URL or placeholder."""
     global _pool
-    database_url = os.getenv("DATABASE_URL")
-    if not database_url:
-        # Allow app to run without DB for mock-only mode
+    database_url = (os.getenv("DATABASE_URL") or "").strip()
+    if not database_url or _is_placeholder_db_url(database_url):
         return
-    _pool = await asyncpg.create_pool(
-        database_url,
-        min_size=1,
-        max_size=10,
-        command_timeout=60,
-    )
+    try:
+        _pool = await asyncpg.create_pool(
+            database_url,
+            min_size=1,
+            max_size=10,
+            command_timeout=60,
+        )
+    except Exception:
+        # DB unreachable (e.g. wrong host, no network) — leave pool None so app still starts
+        _pool = None
 
 
 async def close_pool() -> None:
