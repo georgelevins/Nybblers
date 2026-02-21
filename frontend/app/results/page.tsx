@@ -29,6 +29,10 @@ export default async function ResultsPage({
     <main className={styles.page}>
       <header className={styles.topBar}>
         <div className={styles.topBarInner}>
+          {/* home button sits to the left of the search box */}
+          <Link href="/home" className={styles.topHomeButton}>
+            Home
+          </Link>
           <form action="/results" className={`${styles.searchForm} ${styles.compactSearch}`}>
             <input
               className={styles.searchInput}
@@ -42,9 +46,6 @@ export default async function ResultsPage({
               Search
             </button>
           </form>
-          <Link href="/home" className={styles.topHomeButton}>
-            Home
-          </Link>
         </div>
       </header>
 

@@ -31,6 +31,10 @@ export default async function AlertsPage({
     <main className={styles.page}>
       <header className={styles.topBar}>
         <div className={styles.topBarInner}>
+          {/* home button to left of search, same adjustment as results page */}
+          <Link href="/home" className={styles.topHomeButton}>
+            Home
+          </Link>
           <form action="/results" className={`${styles.searchForm} ${styles.compactSearch}`}>
             <input
               className={styles.searchInput}
@@ -44,9 +48,6 @@ export default async function AlertsPage({
               Search
             </button>
           </form>
-          <Link href="/home" className={styles.topHomeButton}>
-            Home
-          </Link>
         </div>
       </header>
 

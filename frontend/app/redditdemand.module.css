@@ -390,6 +390,8 @@
   line-height: 1;
   display: inline-flex;
   align-items: center;
+  position: relative;
+  top: -2px; /* raise slightly */
 }
 
 .topHomeButton:hover {
