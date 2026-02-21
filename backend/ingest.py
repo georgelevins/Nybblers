@@ -130,9 +130,9 @@ def iter_zst(path: str, limit: int | None = None) -> Iterator[dict]:
 
 
 def _ts(val) -> datetime | None:
-    """Convert a Unix timestamp (int/float/str) to a UTC datetime."""
+    """Convert a Unix timestamp (int/float/str) to a naive UTC datetime."""
     try:
-        return datetime.fromtimestamp(int(val), tz=timezone.utc)
+        return datetime.fromtimestamp(int(val), tz=timezone.utc).replace(tzinfo=None)
     except (TypeError, ValueError, OSError):
         return None
 
@@ -208,7 +208,7 @@ def extract_comment(obj: dict) -> dict | None:
         return None
     post_id = link_id[3:]  # strip "t3_" prefix
 
-    parent_id_raw = (obj.get("parent_id") or "").strip()
+    parent_id_raw = str(obj.get("parent_id") or "").strip()
     parent_type = "comment" if parent_id_raw.startswith("t1_") else "post"
 
     created = _ts(obj.get("created_utc"))
@@ -255,18 +255,23 @@ async def ensure_schema(conn: asyncpg.Connection) -> None:
         );
     """)
 
-    # pgvector HNSW indexes for fast approximate nearest-neighbour search.
-    # Build AFTER bulk data load for speed; these commands are idempotent.
-    await conn.execute("""
+    # HNSW indexes require table ownership — skip gracefully if we lack it.
+    for idx_sql in [
+        """
         CREATE INDEX IF NOT EXISTS posts_embedding_hnsw
             ON posts USING hnsw (embedding vector_cosine_ops)
             WITH (m = 16, ef_construction = 64);
-    """)
-    await conn.execute("""
+        """,
+        """
         CREATE INDEX IF NOT EXISTS comment_embeddings_hnsw
             ON comment_embeddings USING hnsw (embedding vector_cosine_ops)
             WITH (m = 16, ef_construction = 64);
-    """)
+        """,
+    ]:
+        try:
+            await conn.execute(idx_sql)
+        except asyncpg.exceptions.InsufficientPrivilegeError:
+            log.warning("Skipping HNSW index creation (insufficient privileges — run as table owner to create indexes).")
     log.info("Schema ensured (comment_embeddings table + HNSW indexes).")
 
 
@@ -297,25 +302,47 @@ async def insert_posts(pool: asyncpg.Pool, posts: list[dict], dry_run: bool) -> 
 async def insert_comments(pool: asyncpg.Pool, comments: list[dict], dry_run: bool) -> int:
     if not comments or dry_run:
         return 0
-    async with pool.acquire() as conn:
-        await conn.executemany(
-            """
-            INSERT INTO comments
-                (id, post_id, parent_id, parent_type, author, body,
-                 created_utc, score, controversiality)
-            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
-            ON CONFLICT (id) DO NOTHING
-            """,
-            [
-                (
-                    c["id"], c["post_id"], c["parent_id"], c["parent_type"],
-                    c["author"], c["body"], c["created_utc"],
-                    c["score"], c["controversiality"],
-                )
-                for c in comments
-            ],
+    rows = [
+        (
+            c["id"], c["post_id"], c["parent_id"], c["parent_type"],
+            c["author"], c["body"], c["created_utc"],
+            c["score"], c["controversiality"],
         )
-    return len(comments)
+        for c in comments
+    ]
+    async with pool.acquire() as conn:
+        try:
+            await conn.executemany(
+                """
+                INSERT INTO comments
+                    (id, post_id, parent_id, parent_type, author, body,
+                     created_utc, score, controversiality)
+                VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+                ON CONFLICT (id) DO NOTHING
+                """,
+                rows,
+            )
+            return len(rows)
+        except asyncpg.exceptions.ForeignKeyViolationError:
+            # Some comments reference posts not yet loaded (e.g. when --limit is used).
+            # Fall back to row-by-row inserts, skipping orphaned comments.
+            inserted = 0
+            for row in rows:
+                try:
+                    await conn.execute(
+                        """
+                        INSERT INTO comments
+                            (id, post_id, parent_id, parent_type, author, body,
+                             created_utc, score, controversiality)
+                        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+                        ON CONFLICT (id) DO NOTHING
+                        """,
+                        *row,
+                    )
+                    inserted += 1
+                except asyncpg.exceptions.ForeignKeyViolationError:
+                    pass
+            return inserted
 
 
 async def update_activity_stats(pool: asyncpg.Pool, dry_run: bool) -> None:

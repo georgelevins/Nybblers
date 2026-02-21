@@ -110,7 +110,7 @@ async def get_top_matches(
     comment_sql = """
         SELECT
             c.id,
-            c.subreddit,
+            p.subreddit,
             c.author,
             c.body,
             COALESCE(c.score, 0) AS score,
@@ -119,6 +119,7 @@ async def get_top_matches(
             'comment' AS kind
         FROM comments c
         JOIN comment_embeddings ce ON ce.comment_id = c.id
+        LEFT JOIN posts p ON p.id = c.post_id
         WHERE ce.embedding <=> $1::vector < $2
         ORDER BY ce.embedding <=> $1::vector
         LIMIT $3
