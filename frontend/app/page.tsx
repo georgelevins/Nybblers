@@ -1,8 +1,8 @@
 import Image from "next/image";
 import Link from "next/link";
 import styles from "./landing.module.css";
-import landingImage from "./landingimage.avif";
-import landingImage2 from "./landingimage2.avif";
+import landingImage from "./rocket.png";
+import landingImage2 from "./ai.png";
 
 export default function Home() {
   return (
@@ -33,21 +33,28 @@ export default function Home() {
       </section>
 
       <section className={styles.imageSection}>
-        <div className={styles.sectionInner}>
-          <h2 className={styles.sectionTitle}>From Discussion to Direction</h2>
-          <p className={styles.sectionText}>
-            Remand helps founders and growth teams turn noisy threads into clear next actions.
-          </p>
-          <div className={styles.imageFrame}>
-            <Image
-              src={landingImage}
-              alt="Developer discussion and planning illustration"
-              className={styles.imageAsset}
-              priority
-            />
-          </div>
-        </div>
-      </section>
+  <div className={styles.sectionInner}>
+    <div className={styles.imageFrame}>
+      {/* Protruding text box */}
+      <div className={styles.protrudingCard}>
+        <h2 className={styles.sectionTitle}>From Discussion to Direction</h2>
+        <p className={styles.sectionText}>
+          Remand helps founders and growth teams turn noisy threads into clear next actions.
+        </p>
+      </div>
+
+      {/* Rocket image moved right */}
+<div className={styles.rocketWrap}>
+  <Image
+    src={landingImage}
+    alt="Developer discussion and planning illustration"
+    className={styles.imageAsset}
+    priority
+  />
+</div>
+    </div>
+  </div>
+</section>
 
       <section className={styles.graphSection}>
         <div className={styles.sectionInner}>
