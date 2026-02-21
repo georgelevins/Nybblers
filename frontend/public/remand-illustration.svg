@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 875" role="img" aria-label="Developer at desk illustration">
+  <rect width="1200" height="875" fill="#f4f4f4"/>
+  <ellipse cx="600" cy="760" rx="490" ry="70" fill="#a6abef" opacity="0.75"/>
+
+  <rect x="235" y="500" width="730" height="24" rx="8" fill="#d8b7a8"/>
+  <line x1="280" y1="524" x2="250" y2="745" stroke="#3f322f" stroke-width="14" stroke-linecap="round"/>
+  <line x1="920" y1="524" x2="950" y2="745" stroke="#3f322f" stroke-width="14" stroke-linecap="round"/>
+
+  <rect x="430" y="278" width="355" height="250" rx="18" fill="#111"/>
+  <rect x="445" y="296" width="325" height="195" rx="8" fill="#c9d6f2"/>
+  <rect x="420" y="528" width="375" height="26" rx="12" fill="#aeb2b8"/>
+
+  <g opacity="0.9">
+    <rect x="472" y="319" width="130" height="8" fill="#7d8de6"/>
+    <rect x="472" y="338" width="185" height="8" fill="#ffb86f"/>
+    <rect x="472" y="357" width="145" height="8" fill="#7d8de6"/>
+    <rect x="472" y="376" width="210" height="8" fill="#7d8de6"/>
+    <rect x="472" y="395" width="170" height="8" fill="#ffb86f"/>
+    <rect x="472" y="414" width="225" height="8" fill="#7d8de6"/>
+  </g>
+
+  <circle cx="600" cy="380" r="58" fill="#c48d60"/>
+  <path d="M538 454c10-44 115-44 126 0v138H538z" fill="#9b1326"/>
+  <rect x="523" y="515" width="158" height="170" rx="30" fill="#c37d62"/>
+  <path d="M575 685h48l-8 70h-32z" fill="#e35d41"/>
+  <line x1="560" y1="700" x2="545" y2="840" stroke="#3f322f" stroke-width="10" stroke-linecap="round"/>
+  <line x1="646" y1="700" x2="660" y2="840" stroke="#3f322f" stroke-width="10" stroke-linecap="round"/>
+
+  <rect x="780" y="320" width="98" height="130" rx="9" fill="#eb9d7a"/>
+  <rect x="794" y="338" width="70" height="95" rx="7" fill="#fff6e8"/>
+  <text x="828" y="384" fill="#7d8de6" font-family="sans-serif" font-size="22" text-anchor="middle">SQL</text>
+
+  <rect x="200" y="390" width="118" height="85" rx="9" fill="#7d8de6" opacity="0.15" stroke="#7d8de6" stroke-width="4"/>
+  <text x="259" y="435" fill="#7d8de6" font-family="sans-serif" font-size="40" text-anchor="middle">JAVA</text>
+
+  <rect x="350" y="180" width="150" height="80" rx="10" fill="#7d8de6" opacity="0.15" stroke="#7d8de6" stroke-width="4"/>
+  <text x="425" y="226" fill="#7d8de6" font-family="sans-serif" font-size="42" text-anchor="middle">PHP</text>
+
+  <rect x="790" y="130" width="160" height="95" rx="12" fill="#7d8de6" opacity="0.14" stroke="#7d8de6" stroke-width="4"/>
+  <text x="870" y="183" fill="#7d8de6" font-family="sans-serif" font-size="46" text-anchor="middle">&lt;CODE&gt;</text>
+
+  <text x="223" y="200" fill="#7d8de6" font-family="sans-serif" font-size="52">RUBY</text>
+  <text x="570" y="188" fill="#7d8de6" font-family="sans-serif" font-size="52">HTML5</text>
+  <text x="970" y="330" fill="#7d8de6" font-family="sans-serif" font-size="58">CSS3</text>
+
+  <circle cx="330" cy="720" r="78" fill="#a6abef" opacity="0.45"/>
+  <circle cx="860" cy="470" r="23" fill="#b9bf6f"/>
+  <rect x="830" y="470" width="58" height="54" rx="8" fill="#f6cc6a"/>
+</svg>
