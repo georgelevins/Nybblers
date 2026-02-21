@@ -67,6 +67,7 @@ function ResultView({ data }: { data: AgentResponse }) {
   const rationale = typeof outputs?.rationale === "string" ? outputs.rationale : null;
   const enhanceSuggested = outputs?.suggested === true;
   const enhanceError = typeof outputs?.enhance_error === "string";
+  const wellOptimisedMessage = typeof outputs?.well_optimised_message === "string" ? (outputs.well_optimised_message as string) : null;
   const enhancedIdeaText = typeof outputs?.enhanced_idea_text === "string" ? (outputs.enhanced_idea_text as string) : null;
   const originalTraction = typeof outputs?.original_traction === "number" ? (outputs.original_traction as number) : null;
   const enhancedTraction = typeof outputs?.enhanced_traction === "number" ? (outputs.enhanced_traction as number) : null;
@@ -80,17 +81,21 @@ function ResultView({ data }: { data: AgentResponse }) {
           <p className={styles.agentRationale}>{enhancedIdeaText}</p>
         </div>
       )}
-      {!enhanceSuggested && !enhanceError && enhancedIdeaText && (
+      {wellOptimisedMessage && (
+        <p className={styles.agentRationale}>{wellOptimisedMessage}</p>
+      )}
+      {!enhanceSuggested && !enhanceError && !wellOptimisedMessage && enhancedIdeaText && (
         <p className={styles.agentRationale}>
           We tested an enhanced variant but it didn’t get better traction than your idea. Your idea is strong as-is.
         </p>
       )}
-      {enhancedIdeaText && !enhanceSuggested && !enhanceError && (
+      {enhancedIdeaText && !enhanceSuggested && !enhanceError && !wellOptimisedMessage && (
         <p className={styles.agentRationale} style={{ marginTop: "0.5rem" }}><strong>Enhanced variant (not suggested):</strong> {enhancedIdeaText}</p>
       )}
-      {originalTraction !== null && enhancedTraction !== null && (
+      {originalTraction !== null && (
         <p className={styles.agentRationale} style={{ marginTop: "0.5rem", fontSize: "0.9em" }}>
-          Your idea traction: <strong>{originalTraction.toFixed(1)}</strong> · Enhanced traction: <strong>{enhancedTraction.toFixed(1)}</strong>
+          Your idea traction: <strong>{originalTraction.toFixed(1)}</strong>
+          {enhancedTraction !== null && <> · Enhanced traction: <strong>{enhancedTraction.toFixed(1)}</strong></>}
         </p>
       )}
       {rationale && <p className={styles.agentRationale}>{rationale}</p>}
