@@ -187,6 +187,50 @@ export async function runAgent(
   return res.json() as Promise<AgentResponse>;
 }
 
+// ---- Active threads (engagement campaign) ----
+
+export type ActiveThread = {
+  id: string;
+  title: string;
+  subreddit: string;
+  url: string | null;
+  last_comment_utc: string | null;
+  score: number;
+  num_comments: number;
+  recent_comments: number;
+  velocity: number;
+  estimated_impressions: number;
+};
+
+export type ActiveThreadsResponse = {
+  active_count: number;
+  total_estimated_impressions: number;
+  window_hours: number;
+  threads: ActiveThread[];
+};
+
+export async function getActiveThreads(
+  query: string,
+  windowHours = 24,
+  minComments = 3,
+  limit = 20,
+): Promise<ActiveThreadsResponse | null> {
+  const base = getApiBase();
+  const params = new URLSearchParams({
+    q: query.trim(),
+    window_hours: String(windowHours),
+    min_comments: String(minComments),
+    limit: String(limit),
+  });
+  const res = await fetch(`${base}/search/active-threads?${params}`);
+  if (res.status === 503) return null; // DB not available — caller shows empty state
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: res.statusText }));
+    throw new Error((err as { detail?: string }).detail ?? "Active threads request failed");
+  }
+  return res.json() as Promise<ActiveThreadsResponse>;
+}
+
 /** Convert TopMatch items into RetrievalMatch format for the agent. */
 export function matchesToRetrieval(matches: TopMatch[]): RetrievalMatch[] {
   return matches.map((m) => ({

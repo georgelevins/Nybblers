@@ -3,10 +3,12 @@ Post repository — real asyncpg + pgvector queries.
 All functions embed the query text via OpenAI before searching.
 """
 
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from database import get_pool
 from models import (
+    ActiveThread,
+    ActiveThreadsResponse,
     Comment,
     GrowthMomentumResponse,
     MentionsTrendResponse,
@@ -344,6 +346,87 @@ async def get_thread(thread_id: str) -> ThreadDetail | None:
         activity_ratio=post_row["activity_ratio"],
         reconstructed_text=post_row["reconstructed_text"],
         comments=comments,
+    )
+
+
+async def get_active_threads(
+    query_text: str,
+    window_hours: int = 24,
+    min_comments: int = 3,
+    limit: int = 20,
+) -> ActiveThreadsResponse:
+    """
+    Return semantically relevant posts that had recent comment activity.
+
+    'Active' is defined as: ≥ min_comments comments posted within the
+    window_hours period immediately before the thread's last_comment_utc.
+    This is relative to the thread's own activity peak (not today's date),
+    so it works correctly with Pushshift dump data.
+
+    Velocity = recent_comments / window_hours — higher means faster discussion.
+    """
+    embedding = await embed_text(query_text)
+    vec = to_pg_vector(embedding)
+    pool = await get_pool()
+    window = timedelta(hours=window_hours)
+
+    sql = """
+        WITH active AS (
+            SELECT
+                p.id,
+                p.title,
+                p.subreddit,
+                p.url,
+                p.last_comment_utc,
+                COALESCE(p.score, 0)        AS score,
+                COALESCE(p.num_comments, 0) AS num_comments,
+                COUNT(c.id) FILTER (
+                    WHERE c.created_utc >= p.last_comment_utc - $3
+                ) AS recent_comments
+            FROM posts p
+            JOIN comments c ON c.post_id = p.id
+            WHERE p.embedding IS NOT NULL
+              AND p.embedding <=> $1::vector < $2
+              AND p.last_comment_utc IS NOT NULL
+            GROUP BY p.id, p.title, p.subreddit, p.url,
+                     p.last_comment_utc, p.score, p.num_comments
+            HAVING COUNT(c.id) FILTER (
+                WHERE c.created_utc >= p.last_comment_utc - $3
+            ) >= $4
+        )
+        SELECT
+            *,
+            recent_comments::float / GREATEST(1, $5) AS velocity
+        FROM active
+        ORDER BY velocity DESC
+        LIMIT $6
+    """
+
+    async with pool.acquire() as conn:
+        rows = await conn.fetch(sql, vec, SIMILARITY_THRESHOLD, window, min_comments, float(window_hours), limit)
+
+    threads = [
+        ActiveThread(
+            id=r["id"],
+            title=r["title"],
+            subreddit=r["subreddit"],
+            url=r["url"],
+            last_comment_utc=r["last_comment_utc"],
+            score=r["score"],
+            num_comments=r["num_comments"],
+            recent_comments=int(r["recent_comments"]),
+            velocity=float(r["velocity"]),
+            estimated_impressions=r["score"] * 4 + r["num_comments"] * 100,
+        )
+        for r in rows
+    ]
+
+    total_impressions = sum(t.estimated_impressions for t in threads)
+    return ActiveThreadsResponse(
+        active_count=len(threads),
+        total_estimated_impressions=total_impressions,
+        window_hours=window_hours,
+        threads=threads,
     )
 
 
