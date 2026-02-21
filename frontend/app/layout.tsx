@@ -14,7 +14,7 @@ const dmSerif = DM_Serif_Display({
 });
 
 export const metadata: Metadata = {
-  title: "RedditDemand",
+  title: "Remand",
   description: "Find and validate demand from Reddit conversations.",
 };
 

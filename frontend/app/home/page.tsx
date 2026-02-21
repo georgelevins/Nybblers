@@ -25,7 +25,7 @@ export default async function HomePage({
       {showSkippedModal ? <SkipProfileModal /> : null}
 
       <section className={styles.homeWrap}>
-        <h1 className={styles.wordmark}>RedditDemand</h1>
+        <h1 className={styles.wordmark}>Remand</h1>
         <p className={styles.tagline}>Signal from the Noise</p>
 
         <form action="/results" className={styles.searchForm}>
