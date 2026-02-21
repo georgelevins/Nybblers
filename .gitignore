@@ -1,0 +1,93 @@
+# =========================
+# Editor / IDE
+# =========================
+.cursor/
+.history/
+.idea/
+*.swp
+*.swo
+*~
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+
+# =========================
+# Dependencies
+# =========================
+node_modules/
+.pnp
+.pnp.js
+.yarn/cache
+.yarn/install-state.gz
+.yarn/unplugged
+.yarn/build-state.yml
+.yarn/patches
+.pnpm-store/
+
+# =========================
+# Next.js (frontend)
+# =========================
+frontend/.next/
+frontend/out/
+frontend/build/
+frontend/.vercel
+frontend/.turbo
+frontend/next-env.d.ts
+
+# =========================
+# Environment & secrets
+# =========================
+.env
+.env.*
+!.env.example
+!.env.sample
+*.pem
+
+# =========================
+# Build & cache
+# =========================
+dist/
+build/
+*.tsbuildinfo
+.turbo
+.cache/
+.parcel-cache/
+.eslintcache
+.stylelintcache
+
+# =========================
+# Logs & debug
+# =========================
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# =========================
+# OS
+# =========================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+ehthumbs.db
+
+# =========================
+# Testing & coverage
+# =========================
+coverage/
+.nyc_output/
+*.lcov
+.jest/
+
+# =========================
+# Misc
+# =========================
+*.local
+.vercel
+.turbo
