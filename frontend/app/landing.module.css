@@ -151,6 +151,15 @@
   margin-top: 1.3rem;
   border: 1px solid rgba(209, 98, 36, 0.18);
   border-radius: 18px;
+
+  /* keep the box, but make it a positioning container */
+  position: relative;
+  overflow: visible;
+
+  /* push the rocket area to the right */
+  display: flex;
+  justify-content: flex-end;
+
   background: rgba(255, 255, 255, 0.9);
   box-shadow: 0 18px 42px rgba(120, 49, 15, 0.1);
   padding: 0.9rem;
@@ -162,6 +171,9 @@
   height: auto;
   border-radius: 12px;
   background: #f9f8f7;
+
+  /* move the rocket a lot more to the right */
+  transform: translateX(120px);
 }
 
 .chartCard {
@@ -290,4 +302,46 @@
   .statRow {
     grid-template-columns: 1fr;
   }
+}
+
+
+
+/* The box that protrudes from top-left + middle-left */
+.protrudingCard {
+  position: absolute;
+  left: -180px;          /* sticks out from the left */
+  top: -26px;           /* sticks out from the top */
+  transform: translateY(72px); /* pushes it down toward middle-left */
+  z-index: 2;
+
+  max-width: 360px;
+  padding: 18px;
+  border-radius: 18px;
+
+  background: rgba(255, 246, 238, 0.95);
+  border: 1px solid rgba(239, 207, 184, 0.9);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.12);
+  backdrop-filter: blur(10px);
+}
+
+/* Optional: remove default margins inside the card */
+.protrudingCard .sectionTitle {
+  margin: 0 0 8px 0;
+}
+.protrudingCard .sectionText {
+  margin: 0;
+}
+
+.rocketWrap {
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(209, 98, 36, 0.18);
+  border-radius: 18px;
+  box-shadow: 0 18px 42px rgba(120, 49, 15, 0.1);
+
+  padding: 0.9rem; /* this recreates your nice white frame */
+  max-width: 760px; /* adjust if you want */
+  width: 100%;
+
+  /* move BOTH the white box AND the image together */
+  transform: translateX(150px);
 }
