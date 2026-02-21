@@ -86,6 +86,11 @@ coverage/
 .jest/
 
 # =========================
+# MCP (may contain credentials)
+# =========================
+.mcp.json
+
+# =========================
 # Misc
 # =========================
 *.local
@@ -93,5 +98,15 @@ coverage/
 .turbo
 
 backend/venv
+
+# =========================
+# Python cache
+# =========================
+__pycache__/
+*.py[cod]
+*.pyo
+
+zst/
+
 __pycache__/
 *.pyc

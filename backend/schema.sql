@@ -39,3 +39,7 @@ CREATE TABLE alerts (
   created_at TIMESTAMP DEFAULT NOW(),
   last_notified_at TIMESTAMP
 );
+
+-- Indexes for query performance
+CREATE INDEX IF NOT EXISTS comments_post_id_idx ON comments (post_id);
+CREATE INDEX IF NOT EXISTS posts_activity_ratio_idx ON posts (activity_ratio DESC NULLS LAST);
