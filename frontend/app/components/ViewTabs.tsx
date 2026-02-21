@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-type TabKey = "demand" | "opportunity" | "alerts";
+type TabKey = "trend" | "users" | "alerts";
 
 type ViewTabsProps = {
   active: TabKey;
@@ -31,14 +31,14 @@ export default function ViewTabs({
 }: ViewTabsProps) {
   const links: Array<{ key: TabKey; label: string; href: string }> = [
     {
-      key: "demand",
-      label: "Demand View",
-      href: withQuery("/results", query, { view: "demand" }),
+      key: "trend",
+      label: "Topic Mentions",
+      href: withQuery("/results", query, { screen: "trend" }),
     },
     {
-      key: "opportunity",
-      label: "Opportunity View",
-      href: withQuery("/results", query, { view: "opportunity" }),
+      key: "users",
+      label: "Users by Subreddit",
+      href: withQuery("/results", query, { screen: "users" }),
     },
     {
       key: "alerts",

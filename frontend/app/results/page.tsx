@@ -1,18 +1,30 @@
 import Link from "next/link";
-import CopyContextButton from "../components/CopyContextButton";
-import ViewTabs from "../components/ViewTabs";
+import GrowthMomentumScreen from "../components/results/GrowthMomentumScreen";
+import MentionsTrendScreen from "../components/results/MentionsTrendScreen";
+import SubredditUsersScreen from "../components/results/SubredditUsersScreen";
+import TopCommentsScreen from "../components/results/TopCommentsScreen";
 import styles from "../redditdemand.module.css";
-import { getThreads, type ResultsView } from "../lib/redditDemandData";
 
 type SearchParamsInput = Record<string, string | string[] | undefined>;
+type ResultsScreen = "trend" | "users" | "growth" | "quotes";
 
 function firstParam(value: string | string[] | undefined): string {
   if (Array.isArray(value)) return value[0] ?? "";
   return value ?? "";
 }
 
-function resolveView(value: string): ResultsView {
-  return value === "opportunity" ? "opportunity" : "demand";
+function resolveScreen(value: string): ResultsScreen {
+  if (value === "users") return "users";
+  if (value === "growth") return "growth";
+  if (value === "quotes") return "quotes";
+  return "trend";
+}
+
+function screenHref(query: string, screen: ResultsScreen) {
+  const params = new URLSearchParams();
+  if (query) params.set("q", query);
+  params.set("screen", screen);
+  return `/results?${params.toString()}`;
 }
 
 export default async function ResultsPage({
@@ -21,18 +33,13 @@ export default async function ResultsPage({
   searchParams: Promise<SearchParamsInput>;
 }) {
   const params = await searchParams;
-  const query = firstParam(params.q).trim();
-  const view = resolveView(firstParam(params.view));
-  const threads = getThreads(view);
+  const query = firstParam(params.q).trim() || "invoicing software for freelancers";
+  const screen = resolveScreen(firstParam(params.screen));
 
   return (
     <main className={styles.page}>
       <header className={styles.topBar}>
         <div className={styles.topBarInner}>
-          {/* home button sits to the left of the search box */}
-          <Link href="/home" className={styles.topHomeButton}>
-            Home
-          </Link>
           <form action="/results" className={`${styles.searchForm} ${styles.compactSearch}`}>
             <input
               className={styles.searchInput}
@@ -41,77 +48,54 @@ export default async function ResultsPage({
               placeholder="Search demand..."
               aria-label="Search demand"
             />
-            <input type="hidden" name="view" value={view} />
+            <input type="hidden" name="screen" value={screen} />
             <button type="submit" className={styles.searchButton}>
               Search
             </button>
           </form>
+          <Link href="/home" className={styles.topHomeButton}>
+            Home
+          </Link>
         </div>
       </header>
 
       <section className={`${styles.shell} ${styles.section}`}>
-        <ViewTabs
-          active={view}
-          query={query}
-          className={styles.tabs}
-          tabClassName={styles.tab}
-          activeClassName={styles.tabActive}
-        />
-
-        <p className={styles.resultsCount}>
-          {threads.length} threads matched · sorted by{" "}
-          {view === "opportunity" ? "heat score" : "relevance"}
+        <h1 className={styles.resultsHeading}>Analytics View: {query}</h1>
+        <p className={styles.resultsSubheading}>
+          Mock data preview while backend integration is in progress.
         </p>
 
-        <div className={styles.cards}>
-          {threads.map((thread) => (
-            <article key={thread.title} className={styles.card}>
-              <h2 className={styles.cardTitle}>{thread.title}</h2>
-              <div className={styles.meta}>
-                <span className={styles.subreddit}>{thread.subreddit}</span>
-                <span>{thread.age}</span>
-                <span>{thread.comments} comments</span>
-                {thread.ranksOnGoogle ? (
-                  <span className={`${styles.badge} ${styles.badgeGoogle}`}>Ranks on Google</span>
-                ) : null}
-                {thread.active ? (
-                  <span className={`${styles.badge} ${styles.badgeActive}`}>Active</span>
-                ) : null}
-              </div>
-              <p className={styles.snippet}>{thread.snippet}</p>
-              <div className={styles.cardFooter}>
-                <div className={styles.heatRow}>
-                  <span>Heat</span>
-                  <span className={styles.heatTrack}>
-                    <span
-                      className={styles.heatFill}
-                      style={{ width: `${thread.heat}%`, display: "block" }}
-                    />
-                  </span>
-                  <span className={styles.heatValue}>{thread.heat}</span>
-                </div>
-
-                <div className={styles.actions}>
-                  {view === "opportunity" ? (
-                    <CopyContextButton
-                      className={styles.ghostButton}
-                      title={thread.title}
-                      summary={thread.summary}
-                    />
-                  ) : null}
-                  <Link
-                    href={thread.url}
-                    className={styles.ghostButton}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    View thread
-                  </Link>
-                </div>
-              </div>
-            </article>
-          ))}
+        <div className={styles.tabs}>
+          <Link
+            href={screenHref(query, "trend")}
+            className={`${styles.tab} ${screen === "trend" ? styles.tabActive : ""}`.trim()}
+          >
+            1. Topic Mentions
+          </Link>
+          <Link
+            href={screenHref(query, "users")}
+            className={`${styles.tab} ${screen === "users" ? styles.tabActive : ""}`.trim()}
+          >
+            2. Users by Subreddit
+          </Link>
+          <Link
+            href={screenHref(query, "growth")}
+            className={`${styles.tab} ${screen === "growth" ? styles.tabActive : ""}`.trim()}
+          >
+            3. Growth Momentum
+          </Link>
+          <Link
+            href={screenHref(query, "quotes")}
+            className={`${styles.tab} ${screen === "quotes" ? styles.tabActive : ""}`.trim()}
+          >
+            4. Top Comments
+          </Link>
         </div>
+
+        {screen === "trend" ? <MentionsTrendScreen query={query} /> : null}
+        {screen === "users" ? <SubredditUsersScreen query={query} /> : null}
+        {screen === "growth" ? <GrowthMomentumScreen query={query} /> : null}
+        {screen === "quotes" ? <TopCommentsScreen query={query} /> : null}
       </section>
     </main>
   );
