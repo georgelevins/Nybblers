@@ -91,3 +91,5 @@ coverage/
 *.local
 .vercel
 .turbo
+
+backend/venv
