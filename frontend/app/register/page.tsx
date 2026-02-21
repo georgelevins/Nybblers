@@ -43,14 +43,14 @@ export default function RegisterPage() {
 
             <p className={styles.authSub} style={{ marginTop: "0.9rem" }}>
               Already have an account?{" "}
-              <Link href="/" className={styles.textLink}>
+              <Link href="/signin" className={styles.textLink}>
                 Sign in
               </Link>
             </p>
           </div>
 
           <aside className={styles.overviewPanel}>
-            <h2>What RedditDemand gives you</h2>
+            <h2>What Remand gives you</h2>
             <p>
               Find high-intent Reddit threads, validate your startup demand, and focus on
               opportunities that still attract ongoing comments.
