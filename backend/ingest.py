@@ -67,10 +67,54 @@ def _utc(ts) -> datetime | None:
         return None
 
 
+def _naive_utc(dt: datetime | None) -> datetime | None:
+    """Return None or a naive datetime in UTC (asyncpg-friendly for TIMESTAMPTZ)."""
+    if dt is None:
+        return None
+    if dt.tzinfo is None:
+        return dt
+    return dt.astimezone(timezone.utc).replace(tzinfo=None)
+
+
 def _clean(text: str | None) -> str | None:
     if text is None:
         return None
     return None if text.strip() in DELETED else text
+
+
+def _map_submission(obj: dict) -> dict:
+    """
+    Normalize a raw submission record to our expected field names.
+    Override or extend this if your ZST uses different keys (e.g. 'selftext' vs 'body').
+    """
+    return {
+        "id": obj.get("id", ""),
+        "subreddit": obj.get("subreddit", ""),
+        "title": obj.get("title", ""),
+        "selftext": obj.get("selftext"),
+        "author": obj.get("author"),
+        "created_utc": obj.get("created_utc"),
+        "score": obj.get("score"),
+        "url": obj.get("url"),
+        "num_comments": obj.get("num_comments"),
+    }
+
+
+def _map_comment(obj: dict) -> dict:
+    """
+    Normalize a raw comment record to our expected field names.
+    Override or extend this if your ZST uses different keys.
+    """
+    return {
+        "id": obj.get("id", ""),
+        "link_id": obj.get("link_id", ""),
+        "parent_id": obj.get("parent_id"),
+        "body": obj.get("body"),
+        "author": obj.get("author"),
+        "created_utc": obj.get("created_utc"),
+        "score": obj.get("score"),
+        "controversiality": obj.get("controversiality", 0),
+    }
 
 
 def _year_bounds(year: int) -> tuple[int, int]:
@@ -101,16 +145,22 @@ def open_jsonl(path: Path):
 # ---------------------------------------------------------------------------
 
 
-async def _log_start(conn: asyncpg.Connection, file_name: str, file_type: str) -> int:
-    """Insert a 'running' row into ingest_log and return its id."""
+async def _log_start(
+    conn: asyncpg.Connection,
+    file_name: str,
+    file_type: str,
+    year: int | None = None,
+) -> int:
+    """Insert a 'running' row into ingest_log and return its id. year=NULL for full-file."""
     return await conn.fetchval(
         """
-        INSERT INTO ingest_log (file_name, file_type, status)
-        VALUES ($1, $2, 'running')
+        INSERT INTO ingest_log (file_name, file_type, status, year)
+        VALUES ($1, $2, 'running', $3)
         RETURNING id
         """,
         file_name,
         file_type,
+        year,
     )
 
 
@@ -138,11 +188,20 @@ async def _log_failed(conn: asyncpg.Connection, log_id: int, error: str) -> None
     )
 
 
-async def _already_done(conn: asyncpg.Connection, file_name: str) -> bool:
-    """Return True if this file has already been successfully ingested."""
+async def _already_done(
+    conn: asyncpg.Connection,
+    file_name: str,
+    year: int | None = None,
+) -> bool:
+    """Return True if this (file_name, year) has already been successfully ingested."""
     result = await conn.fetchval(
-        "SELECT 1 FROM ingest_log WHERE file_name = $1 AND status = 'complete' LIMIT 1",
+        """
+        SELECT 1 FROM ingest_log
+        WHERE file_name = $1 AND (year IS NOT DISTINCT FROM $2) AND status = 'complete'
+        LIMIT 1
+        """,
         file_name,
+        year,
     )
     return result is not None
 
@@ -158,8 +217,9 @@ async def insert_posts(
     limit: int | None = None,
     year: int | None = None,
 ) -> int:
-    if await _already_done(conn, path.name):
-        print(f"  Skipping {path.name} (already ingested)")
+    if await _already_done(conn, path.name, year=year):
+        msg = f"  Skipping {path.name} (already ingested" + (f" for year={year})" if year is not None else ")")
+        print(msg)
         return 0
 
     year_start, year_end = _year_bounds(year) if year else (None, None)
@@ -172,7 +232,7 @@ async def insert_posts(
     """
     batch = []
     total = 0
-    log_id = await _log_start(conn, path.name, "submissions")
+    log_id = await _log_start(conn, path.name, "submissions", year=year)
 
     try:
         for line in open_jsonl(path):
@@ -184,13 +244,14 @@ async def insert_posts(
             except json.JSONDecodeError:
                 continue
 
-            post_id = obj.get("id", "")
+            m = _map_submission(obj)
+            post_id = m["id"] or ""
             if not post_id:
                 continue
 
             # Year filter
             if year is not None:
-                ts = obj.get("created_utc")
+                ts = m["created_utc"]
                 try:
                     ts_int = int(ts)
                 except (TypeError, ValueError):
@@ -200,14 +261,14 @@ async def insert_posts(
 
             batch.append((
                 post_id,
-                obj.get("subreddit", ""),
-                obj.get("title", ""),
-                _clean(obj.get("selftext")),
-                obj.get("author"),
-                _utc(obj.get("created_utc")),
-                obj.get("score"),
-                obj.get("url"),
-                obj.get("num_comments"),
+                m["subreddit"] or "",
+                m["title"] or "",
+                _clean(m["selftext"]),
+                m["author"],
+                _naive_utc(_utc(m["created_utc"])),
+                m["score"],
+                m["url"],
+                m["num_comments"],
             ))
 
             if len(batch) >= BATCH_SIZE:
@@ -248,8 +309,9 @@ async def insert_comments(
     limit: int | None = None,
     year: int | None = None,
 ) -> int:
-    if await _already_done(conn, path.name):
-        print(f"  Skipping {path.name} (already ingested)")
+    if await _already_done(conn, path.name, year=year):
+        msg = f"  Skipping {path.name} (already ingested" + (f" for year={year})" if year is not None else ")")
+        print(msg)
         return 0
 
     year_start, year_end = _year_bounds(year) if year else (None, None)
@@ -267,7 +329,7 @@ async def insert_comments(
     batch = []
     total = 0
     skipped = 0
-    log_id = await _log_start(conn, path.name, "comments")
+    log_id = await _log_start(conn, path.name, "comments", year=year)
 
     try:
         for line in open_jsonl(path):
@@ -279,15 +341,16 @@ async def insert_comments(
             except json.JSONDecodeError:
                 continue
 
-            comment_id = obj.get("id", "")
-            body = _clean(obj.get("body"))
+            m = _map_comment(obj)
+            comment_id = m["id"] or ""
+            body = _clean(m["body"])
             if not comment_id or body is None:
                 skipped += 1
                 continue
 
             # Year filter
             if year is not None:
-                ts = obj.get("created_utc")
+                ts = m["created_utc"]
                 try:
                     ts_int = int(ts)
                 except (TypeError, ValueError):
@@ -297,26 +360,27 @@ async def insert_comments(
                     skipped += 1
                     continue
 
-            link_id = obj.get("link_id", "")
+            link_id = str(m["link_id"] or "")
             post_id = link_id[3:] if link_id.startswith("t3_") else link_id
 
             if post_id not in post_ids:
                 skipped += 1
                 continue
 
-            parent_id_raw = obj.get("parent_id", "")
-            parent_type = parent_id_raw[:2] if parent_id_raw else None  # "t1" or "t3"
+            parent_id_raw = m["parent_id"]
+            parent_id_str = str(parent_id_raw) if parent_id_raw is not None else ""
+            parent_type = parent_id_str[:2] if len(parent_id_str) >= 2 else None  # "t1" or "t3"
 
             batch.append((
                 comment_id,
                 post_id,
-                parent_id_raw or None,
+                parent_id_str or None,
                 parent_type,
-                obj.get("author"),
+                m["author"],
                 body,
-                _utc(obj.get("created_utc")),
-                obj.get("score"),
-                obj.get("controversiality", 0),
+                _naive_utc(_utc(m["created_utc"])),
+                m["score"],
+                m["controversiality"],
             ))
 
             if len(batch) >= BATCH_SIZE:
@@ -477,6 +541,70 @@ def _find_pairs(directory: Path) -> list[tuple[Path, Path]]:
     return [(submissions[n], comments[n]) for n in matched]
 
 
+def _dry_run_count_submissions(
+    path: Path,
+    limit: int | None = None,
+    year: int | None = None,
+) -> int:
+    """Stream submissions file and count rows that would be inserted (year/limit applied)."""
+    year_start, year_end = _year_bounds(year) if year else (None, None)
+    count = 0
+    for line in open_jsonl(path):
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            obj = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        m = _map_submission(obj)
+        if not (m["id"] or ""):
+            continue
+        if year is not None:
+            try:
+                ts_int = int(m["created_utc"])
+            except (TypeError, ValueError):
+                continue
+            if not (year_start <= ts_int < year_end):
+                continue
+        count += 1
+        if limit and count >= limit:
+            break
+    return count
+
+
+def _dry_run_count_comments(
+    path: Path,
+    limit: int | None = None,
+    year: int | None = None,
+) -> int:
+    """Stream comments file and count rows that would be inserted (year/limit applied; no post_id check)."""
+    year_start, year_end = _year_bounds(year) if year else (None, None)
+    count = 0
+    for line in open_jsonl(path):
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            obj = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        m = _map_comment(obj)
+        if not (m["id"] or "") or _clean(m["body"]) is None:
+            continue
+        if year is not None:
+            try:
+                ts_int = int(m["created_utc"])
+            except (TypeError, ValueError):
+                continue
+            if not (year_start <= ts_int < year_end):
+                continue
+        count += 1
+        if limit and count >= limit:
+            break
+    return count
+
+
 async def main_async(
     posts_path: Path | None,
     comments_path: Path | None,
@@ -484,7 +612,36 @@ async def main_async(
     limit: int | None = None,
     year: int | None = None,
     skip_stats: bool = False,
+    dry_run: bool = False,
 ) -> None:
+    if dry_run:
+        pairs: list[tuple[Path, Path]]
+        if subreddits_dir:
+            pairs = _find_pairs(subreddits_dir)
+            if not pairs:
+                print(f"ERROR: No matched submission/comment pairs found in {subreddits_dir}", file=sys.stderr)
+                sys.exit(1)
+            names = [p.name.replace("_submissions.zst", "") for p, _ in pairs]
+            print(f"DRY RUN: Found {len(pairs)} subreddit(s): {', '.join(names)}")
+        else:
+            if not posts_path or not comments_path:
+                print("ERROR: --posts and --comments required when not using --dir.", file=sys.stderr)
+                sys.exit(1)
+            pairs = [(posts_path, comments_path)]
+            print("DRY RUN: single pair")
+        total_posts = 0
+        total_comments = 0
+        for sub_posts, sub_comments in pairs:
+            name = sub_posts.name.replace("_submissions.zst", "")
+            print(f"\n=== {name} ===")
+            n_p = _dry_run_count_submissions(sub_posts, limit=limit, year=year)
+            n_c = _dry_run_count_comments(sub_comments, limit=limit, year=year)
+            print(f"  Would insert ~{n_p:,} posts, ~{n_c:,} comments (comment count does not check post_id)")
+            total_posts += n_p
+            total_comments += n_c
+        print(f"\nDRY RUN total: ~{total_posts:,} posts, ~{total_comments:,} comments. No DB writes.")
+        return
+
     database_url = os.getenv("DATABASE_URL")
     if not database_url:
         print("ERROR: DATABASE_URL environment variable not set.", file=sys.stderr)
@@ -492,6 +649,7 @@ async def main_async(
 
     print("Connecting to database...")
     conn = await asyncpg.connect(database_url)
+    await conn.execute("SET timezone = 'UTC'")
 
     try:
         if subreddits_dir:
@@ -552,6 +710,11 @@ def main() -> None:
         action="store_true",
         help="Skip steps 3–5 (comment stats, activity_ratio, thread reconstruction).",
     )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Stream files and count rows only; no DB connection or inserts.",
+    )
     args = parser.parse_args()
 
     if args.posts and not args.comments:
@@ -577,6 +740,7 @@ def main() -> None:
         limit=args.limit,
         year=args.year,
         skip_stats=args.skip_stats,
+        dry_run=args.dry_run,
     ))
 
 

@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "Postgres_RedditDemand": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-postgres", "postgresql://USER:PASSWORD@HOST:5432/DATABASE"],
+      "env": {
+        "DATABASE_URL": "postgresql://USER:PASSWORD@HOST:5432/DATABASE",
+        "DB_PASSWORD": "YOUR_DB_PASSWORD",
+        "DB_HOST": "your-db-host.supabase.co",
+        "DB_PORT": "5432",
+        "DB_USER": "postgres",
+        "DB_NAME": "postgres"
+      }
+    }
+  }
+}

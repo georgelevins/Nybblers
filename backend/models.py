@@ -19,6 +19,19 @@ class SearchRequest(BaseModel):
     limit: int = Field(default=20, ge=1, le=100)
 
 
+class DemandCountRequest(BaseModel):
+    query: str
+    subreddit: str | None = None
+    min_similarity: float = Field(default=0.5, ge=0.0, le=1.0)
+
+
+class SearchLeadsRequest(BaseModel):
+    query: str
+    subreddit: str | None = None
+    limit: int = Field(default=20, ge=1, le=100)
+    min_similarity: float = Field(default=0.5, ge=0.0, le=1.0)
+
+
 class AlertCreateRequest(BaseModel):
     user_email: EmailStr
     query: str
@@ -31,8 +44,10 @@ class SearchResultItem(BaseModel):
     id: str
     title: str
     subreddit: str
+    author: str | None  # so you can surface "people who want the solution"
     created_utc: datetime
     num_comments: int
+    recent_comment_count: int  # comments in last 90 days — "still active?"
     activity_ratio: float
     last_comment_utc: datetime | None
     similarity_score: float
@@ -41,6 +56,25 @@ class SearchResultItem(BaseModel):
 
 class SearchResponse(BaseModel):
     results: list[SearchResultItem]
+
+
+class DemandCountResponse(BaseModel):
+    matching_posts: int
+    distinct_authors: int
+    total_comments_on_matching: int
+
+
+class LeadResultItem(BaseModel):
+    comment_id: str
+    post_id: str
+    author: str | None
+    snippet: str
+    similarity_score: float
+    post_url: str
+
+
+class SearchLeadsResponse(BaseModel):
+    results: list[LeadResultItem]
 
 
 # --- Opportunity response models ---

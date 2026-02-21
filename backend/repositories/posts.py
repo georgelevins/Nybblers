@@ -1,5 +1,17 @@
-from models import Comment, OpportunityPost, SearchResultItem, ThreadDetail
+from models import (
+    Comment,
+    DemandCountResponse,
+    LeadResultItem,
+    OpportunityPost,
+    SearchResultItem,
+    ThreadDetail,
+)
 from database import get_connection
+
+
+def _reddit_post_url(post_id: str, subreddit: str) -> str:
+    sub = (subreddit or "reddit").strip().lstrip("/")
+    return f"https://reddit.com/r/{sub}/comments/{post_id}"
 
 
 def _vec_to_str(vec: list[float]) -> str:
@@ -21,11 +33,13 @@ async def search_posts(
                 id,
                 subreddit,
                 title,
+                author,
                 created_utc,
-                COALESCE(num_comments, 0)   AS num_comments,
-                COALESCE(activity_ratio, 0) AS activity_ratio,
+                COALESCE(num_comments, 0)       AS num_comments,
+                COALESCE(recent_comment_count, 0) AS recent_comment_count,
+                COALESCE(activity_ratio, 0)     AS activity_ratio,
                 last_comment_utc,
-                1 - (embedding <=> $1::vector) AS similarity_score,
+                1 - (embedding <=> $1::vector)  AS similarity_score,
                 LEFT(reconstructed_text, 300)   AS snippet
             FROM posts
             WHERE embedding IS NOT NULL
@@ -43,12 +57,88 @@ async def search_posts(
             id=r["id"],
             title=r["title"],
             subreddit=r["subreddit"],
+            author=r["author"],
             created_utc=r["created_utc"],
             num_comments=r["num_comments"],
+            recent_comment_count=r["recent_comment_count"],
             activity_ratio=r["activity_ratio"],
             last_comment_utc=r["last_comment_utc"],
             similarity_score=r["similarity_score"],
             snippet=r["snippet"] or "",
+        )
+        for r in rows
+    ]
+
+
+async def get_demand_count(
+    query_embedding: list[float],
+    subreddit: str | None,
+    min_similarity: float,
+) -> DemandCountResponse:
+    """Count posts (and distinct authors) above similarity threshold."""
+    vec = _vec_to_str(query_embedding)
+    async with get_connection() as conn:
+        row = await conn.fetchrow(
+            """
+            SELECT
+                COUNT(*) AS matching_posts,
+                COUNT(DISTINCT author) FILTER (WHERE author IS NOT NULL AND author != '') AS distinct_authors,
+                COALESCE(SUM(num_comments), 0)::bigint AS total_comments_on_matching
+            FROM posts
+            WHERE embedding IS NOT NULL
+              AND ($2::text IS NULL OR subreddit = $2)
+              AND (1 - (embedding <=> $1::vector)) >= $3
+            """,
+            vec,
+            subreddit,
+            min_similarity,
+        )
+    return DemandCountResponse(
+        matching_posts=row["matching_posts"],
+        distinct_authors=row["distinct_authors"],
+        total_comments_on_matching=row["total_comments_on_matching"],
+    )
+
+
+async def search_leads(
+    query_embedding: list[float],
+    subreddit: str | None,
+    limit: int,
+    min_similarity: float,
+) -> list[LeadResultItem]:
+    """Search comment_embeddings for leads; return comment + author + post link."""
+    vec = _vec_to_str(query_embedding)
+    async with get_connection() as conn:
+        rows = await conn.fetch(
+            """
+            SELECT
+                c.id AS comment_id,
+                c.post_id,
+                c.author,
+                LEFT(c.body, 400) AS snippet,
+                1 - (e.embedding <=> $1::vector) AS similarity_score,
+                p.subreddit
+            FROM comment_embeddings e
+            JOIN comments c ON c.id = e.comment_id
+            JOIN posts p ON p.id = c.post_id
+            WHERE ($2::text IS NULL OR p.subreddit = $2)
+              AND (1 - (e.embedding <=> $1::vector)) >= $4
+            ORDER BY e.embedding <=> $1::vector
+            LIMIT $3
+            """,
+            vec,
+            subreddit,
+            limit,
+            min_similarity,
+        )
+    return [
+        LeadResultItem(
+            comment_id=r["comment_id"],
+            post_id=r["post_id"],
+            author=r["author"],
+            snippet=(r["snippet"] or "").strip(),
+            similarity_score=r["similarity_score"],
+            post_url=_reddit_post_url(r["post_id"], r["subreddit"]),
         )
         for r in rows
     ]
