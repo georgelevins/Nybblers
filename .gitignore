@@ -98,3 +98,13 @@ coverage/
 .turbo
 
 backend/venv
+
+# =========================
+# Python cache
+# =========================
+__pycache__/
+*.py[cod]
+*.pyo
+
+zst/
+
