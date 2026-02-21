@@ -43,7 +43,7 @@ export default async function AlertsPage({
               placeholder="Search demand..."
               aria-label="Search demand"
             />
-            <input type="hidden" name="view" value="demand" />
+            <input type="hidden" name="screen" value="trend" />
             <button type="submit" className={styles.searchButton}>
               Search
             </button>

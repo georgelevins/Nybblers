@@ -36,7 +36,7 @@ export default async function HomePage({
             aria-label="Search Reddit demand"
             autoComplete="off"
           />
-          <input type="hidden" name="view" value="demand" />
+          <input type="hidden" name="screen" value="trend" />
           <button className={styles.searchButton} type="submit">
             Search
           </button>
@@ -46,7 +46,7 @@ export default async function HomePage({
           {EXAMPLE_SEARCHES.map((example) => (
             <Link
               key={example}
-              href={`/results?q=${encodeURIComponent(example)}&view=demand`}
+              href={`/results?q=${encodeURIComponent(example)}&screen=trend`}
               className={styles.examplePill}
             >
               {example}
