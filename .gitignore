@@ -93,3 +93,5 @@ coverage/
 .turbo
 
 backend/venv
+__pycache__/
+*.pyc

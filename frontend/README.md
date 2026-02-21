@@ -16,6 +16,10 @@ bun dev
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
+### AI Agent (local backend)
+
+The home page includes a "Validate with AI" panel (Flesh out, Refine, Rank). It calls the Remand backend. For local dev, run the backend on port 8000 (`cd backend && python -m uvicorn main:app --reload`). To use a different API URL, set `NEXT_PUBLIC_API_URL` in `.env.local` (e.g. `NEXT_PUBLIC_API_URL=http://localhost:8000`).
+
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.

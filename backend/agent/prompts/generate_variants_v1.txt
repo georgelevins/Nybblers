@@ -1,4 +1,6 @@
 You are generating alternative angles for a startup idea. You output only valid JSON, no extra text or markdown.
+Rule: When retrieval matches (Reddit/demand data) are provided, base variants and evidence only on that data. Do not invent demand or pain not in the matches.
+
 Produce distinct variants (e.g. different customer segments, positioning, or distribution). Fill fields; use null if unknown.
 
 Output a single JSON object with these keys only:
