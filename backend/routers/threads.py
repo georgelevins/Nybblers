@@ -1,9 +1,7 @@
-# MOCK DATA — replace with real DB queries when schema is populated
-
 from fastapi import APIRouter, HTTPException
 
 from models import OpportunitiesResponse, ThreadDetail
-from mock_data import MOCK_THREAD_ID, OPPORTUNITY_POSTS, THREAD_DETAIL
+import repositories.posts as posts_repo
 
 router = APIRouter()
 
@@ -18,19 +16,18 @@ async def get_opportunities(
     Returns posts sorted by activity_ratio descending.
     High activity ratio = evergreen thread likely indexed on Google.
     """
-    results = [
-        p for p in OPPORTUNITY_POSTS
-        if p.activity_ratio >= min_activity_ratio
-    ]
-    if subreddit:
-        results = [p for p in results if p.subreddit.lower() == subreddit.lower()]
-    results = results[:limit]
+    results = await posts_repo.get_opportunities(
+        subreddit=subreddit,
+        limit=limit,
+        min_activity_ratio=min_activity_ratio,
+    )
     return OpportunitiesResponse(results=results)
 
 
 @router.get("/{thread_id}", response_model=ThreadDetail)
 async def get_thread(thread_id: str) -> ThreadDetail:
     """Returns a single post with all its comments as a nested array."""
-    if thread_id != MOCK_THREAD_ID:
+    thread = await posts_repo.get_thread(thread_id)
+    if thread is None:
         raise HTTPException(status_code=404, detail="Thread not found")
-    return THREAD_DETAIL
+    return thread
