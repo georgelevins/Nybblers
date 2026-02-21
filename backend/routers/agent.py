@@ -20,7 +20,7 @@ def agent_status() -> dict:
     # Force-load .env from backend folder (routers/agent.py -> backend/.env)
     _backend_dir = Path(__file__).resolve().parent.parent
     load_dotenv(dotenv_path=_backend_dir / ".env")
-    key = (os.environ.get("OPENAI_API_KEY") or "").strip()
+    key = (os.environ.get("ANTHROPIC_API_KEY") or "").strip()
     return {"configured": bool(key), "key_length": len(key)}
 
 
@@ -35,6 +35,6 @@ def agent_run(request: AgentRequest) -> AgentResponse:
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except RuntimeError as e:
-        if "API key" in str(e) or "OPENAI_API_KEY" in str(e):
+        if "API key" in str(e) or "ANTHROPIC_API_KEY" in str(e):
             raise HTTPException(status_code=503, detail="Agent not configured (missing API key)")
         raise HTTPException(status_code=502, detail=str(e))
