@@ -147,3 +147,8 @@ class TopMatchesResponse(BaseModel):
 class HealthResponse(BaseModel):
     status: str = "ok"
     timestamp: datetime
+
+
+class DatabaseHealthResponse(BaseModel):
+    database: str  # "ok" | "unavailable"
+    detail: str | None = None

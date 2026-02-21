@@ -11,8 +11,8 @@ from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from database import close_pool, init_pool
-from models import HealthResponse
+from database import close_pool, get_pool, init_pool
+from models import DatabaseHealthResponse, HealthResponse
 from routers import alerts, search, threads, agent
 
 # Load .env from the backend directory, then from cwd (so it works no matter how uvicorn is started)
@@ -53,3 +53,24 @@ app.include_router(agent.router, prefix="/agent", tags=["agent"])
 async def health() -> HealthResponse:
     """Health check endpoint."""
     return HealthResponse(status="ok", timestamp=datetime.utcnow())
+
+
+@app.get("/health/db", response_model=DatabaseHealthResponse)
+async def health_db() -> DatabaseHealthResponse:
+    """Check if the app can connect to the database (e.g. SELECT 1)."""
+    try:
+        pool = await get_pool()
+    except RuntimeError:
+        return DatabaseHealthResponse(
+            database="unavailable",
+            detail="Database pool not initialized (missing or invalid DATABASE_URL).",
+        )
+    try:
+        async with pool.acquire() as conn:
+            await conn.fetchval("SELECT 1")
+        return DatabaseHealthResponse(database="ok")
+    except Exception as e:  # noqa: BLE001
+        return DatabaseHealthResponse(
+            database="unavailable",
+            detail=str(e),
+        )

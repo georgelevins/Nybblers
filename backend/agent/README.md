@@ -12,24 +12,17 @@ Action-based orchestration layer for the Remand product. **The agent always deci
 
 | Action | Description |
 |--------|-------------|
-| `normalize_idea` | Turn raw idea text into a structured idea card |
-| `flesh_out_idea` | Expand a raw idea into a full idea card (problem, customer, solution, etc.); use evidence when provided |
-| `refine_idea` | Sharpen and improve an existing idea using evidence (clearer problem, better differentiation)—not just expansion |
-| `rank_idea` | Rate the idea 1–10 against the data; outputs strengths, weaknesses, rationale |
-| `overview` | Run flesh_out + rank + extract_evidence in one call; returns idea_card, rating, evidence for a full overview |
-| `generate_variants` | Generate alternative angles/variants for the idea |
-| `rerank_matches` | Score and sort retrieval matches by relevance |
-| `extract_evidence` | Pick best quotes from matches as evidence (sorted best/most accurate first) |
+| `enhance_idea` | AI Enhance: brainstorm a better-but-similar idea, test both against Remand search (Reddit), and only suggest the enhanced idea if it has greater traction. |
 
 ## Layout
 
 - `schemas.py` — AgentRequest, AgentResponse, IdeaCard, RetrievalMatch (frozen contract)
 - `router.py` — Dispatches `action` → corresponding skill
 - `claude_client.py` — LLM wrapper (OpenAI GPT; JSON-only, token limit, low temperature)
-- `skills/*.py` — One workflow per action (prompt + Claude + normalize to AgentResponse)
-- `prompts/*.txt` — Versioned prompt library (v1)
+- `skills/enhance_idea.py` — Enhance workflow (prompt + LLM + search traction comparison)
+- `prompts/enhance_idea_v1.txt` — Prompt for the enhance step
 - `interfaces.py` — Placeholder Retriever, Store, RedditSource (stub now; implement later)
-- `mock_retrieval.py` — Mock Reddit-style matches when no DB; used by refine_idea, rank_idea, extract_evidence
+- `mock_retrieval.py` — Optional mock Reddit-style matches (not used by enhance_idea; enhance uses live search)
 
 ## Env
 
@@ -39,7 +32,7 @@ Set `OPENAI_API_KEY` in backend `.env`. Without it, `POST /agent/run` returns 50
 
 Send `POST /agent/run` with:
 
-- `action`: one of the five actions
+- `action`: `enhance_idea`
 - `idea_text`: e.g. "Tool for freelancers to track time"
 - `retrieval.matches`: optional array of `{ id, title, text, source }` (can be 5–10 fake matches)
 

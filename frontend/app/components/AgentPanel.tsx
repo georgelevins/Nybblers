@@ -12,9 +12,7 @@ import {
 import styles from "../redditdemand.module.css";
 
 const AGENT_OPTIONS: { action: AgentAction; label: string }[] = [
-  { action: "flesh_out_idea", label: "Flesh out" },
-  { action: "refine_idea", label: "Refine" },
-  { action: "rank_idea", label: "Rank" },
+  { action: "enhance_idea", label: "AI Enhance" },
 ];
 
 type AgentPanelProps = {
@@ -65,41 +63,37 @@ function EvidenceList({ items }: { items: EvidenceItem[] }) {
 }
 
 function ResultView({ data }: { data: AgentResponse }) {
-  const { idea_card, outputs, evidence, action } = data;
-  const rating = typeof outputs?.rating === "number" ? outputs.rating : null;
+  const { idea_card, outputs, evidence } = data;
   const rationale = typeof outputs?.rationale === "string" ? outputs.rationale : null;
-  const strengths = Array.isArray(outputs?.strengths) ? (outputs.strengths as string[]) : [];
-  const weaknesses = Array.isArray(outputs?.weaknesses) ? (outputs.weaknesses as string[]) : [];
+  const enhanceSuggested = outputs?.suggested === true;
+  const enhanceError = typeof outputs?.enhance_error === "string";
+  const enhancedIdeaText = typeof outputs?.enhanced_idea_text === "string" ? (outputs.enhanced_idea_text as string) : null;
+  const originalTraction = typeof outputs?.original_traction === "number" ? (outputs.original_traction as number) : null;
+  const enhancedTraction = typeof outputs?.enhanced_traction === "number" ? (outputs.enhanced_traction as number) : null;
 
   return (
     <div className={styles.agentResult}>
-      {action === "rank_idea" && rating !== null && (
-        <div className={styles.agentRatingRow}>
-          <span className={styles.agentRatingLabel}>Rating</span>
-          <span className={styles.agentRatingValue}>{rating}/10</span>
+      {enhanceError && <p className={styles.agentError}>{outputs.enhance_error as string}</p>}
+      {enhanceSuggested && enhancedIdeaText && (
+        <div className={styles.agentListBlock}>
+          <span className={styles.agentListLabel}>Suggested idea (more Reddit traction)</span>
+          <p className={styles.agentRationale}>{enhancedIdeaText}</p>
         </div>
+      )}
+      {!enhanceSuggested && !enhanceError && enhancedIdeaText && (
+        <p className={styles.agentRationale}>
+          We tested an enhanced variant but it didn’t get better traction than your idea. Your idea is strong as-is.
+        </p>
+      )}
+      {enhancedIdeaText && !enhanceSuggested && !enhanceError && (
+        <p className={styles.agentRationale} style={{ marginTop: "0.5rem" }}><strong>Enhanced variant (not suggested):</strong> {enhancedIdeaText}</p>
+      )}
+      {originalTraction !== null && enhancedTraction !== null && (
+        <p className={styles.agentRationale} style={{ marginTop: "0.5rem", fontSize: "0.9em" }}>
+          Your idea traction: <strong>{originalTraction.toFixed(1)}</strong> · Enhanced traction: <strong>{enhancedTraction.toFixed(1)}</strong>
+        </p>
       )}
       {rationale && <p className={styles.agentRationale}>{rationale}</p>}
-      {strengths.length > 0 && (
-        <div className={styles.agentListBlock}>
-          <span className={styles.agentListLabel}>Strengths</span>
-          <ul className={styles.agentList}>
-            {strengths.map((s, i) => (
-              <li key={i}>{s}</li>
-            ))}
-          </ul>
-        </div>
-      )}
-      {weaknesses.length > 0 && (
-        <div className={styles.agentListBlock}>
-          <span className={styles.agentListLabel}>Weaknesses</span>
-          <ul className={styles.agentList}>
-            {weaknesses.map((w, i) => (
-              <li key={i}>{w}</li>
-            ))}
-          </ul>
-        </div>
-      )}
       {(idea_card?.problem || idea_card?.solution) && (
         <IdeaCardBlock card={idea_card} />
       )}
@@ -142,7 +136,7 @@ export default function AgentPanel({
     <section className={styles.agentSection}>
       <h2 className={styles.agentHeading}>Validate with AI</h2>
       <p className={styles.agentSub}>
-        Flesh out, refine, or rank your idea using Reddit demand data.
+        AI-enhance your idea: we brainstorm a better variant and test both against Reddit demand—only suggest it if it gets more traction.
         {hasContext && (
           <> Using <strong>{retrievalMatches.length}</strong> real Reddit posts as context.</>
         )}

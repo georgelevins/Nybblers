@@ -28,7 +28,7 @@ def agent_status() -> dict:
 def agent_run(request: AgentRequest) -> AgentResponse:
     """
     Run the agent for one action. Input: AgentRequest. Output: AgentResponse.
-    Actions: normalize_idea, flesh_out_idea, refine_idea, generate_variants, rerank_matches, extract_evidence, rank_idea, overview.
+    Actions: enhance_idea (AI Enhance).
     """
     try:
         return run(request)

@@ -36,15 +36,7 @@ export type GrowthData = {
 
 // ---- Agent types ----
 
-export type AgentAction =
-  | "flesh_out_idea"
-  | "refine_idea"
-  | "rank_idea"
-  | "overview"
-  | "normalize_idea"
-  | "generate_variants"
-  | "rerank_matches"
-  | "extract_evidence";
+export type AgentAction = "enhance_idea";
 
 export type IdeaCard = {
   problem?: string | null;

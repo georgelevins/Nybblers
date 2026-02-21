@@ -1,6 +1,6 @@
 """
 Mock retrieval matches for the agent when no database/vector search exists.
-Reddit-style demand evidence (freelancer/entrepreneur pain points) so refine_idea, rank_idea, extract_evidence have data to work with.
+Optional mock Reddit-style demand evidence. enhance_idea does not use this; it uses live search for traction.
 """
 
 from .schemas import RetrievalMatch

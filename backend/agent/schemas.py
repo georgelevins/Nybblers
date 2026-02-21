@@ -9,16 +9,7 @@ from pydantic import BaseModel, Field
 
 
 # --- Action type (supported actions) ---
-AgentAction = Literal[
-    "normalize_idea",
-    "flesh_out_idea",
-    "refine_idea",
-    "generate_variants",
-    "rerank_matches",
-    "extract_evidence",
-    "rank_idea",
-    "overview",
-]
+AgentAction = Literal["enhance_idea"]
 
 MatchSource = Literal["reddit", "internal", "web", "other"]
 
