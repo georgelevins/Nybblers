@@ -1,4 +1,5 @@
 import Link from "next/link";
+import GoogleAuthLink from "../components/GoogleAuthLink";
 import styles from "../redditdemand.module.css";
 
 export default function RegisterPage() {
@@ -33,15 +34,13 @@ export default function RegisterPage() {
             </form>
 
             <p className={styles.authDivider}>or</p>
-            <Link href="/home" className={styles.googleButton}>
-              Register with Google
-            </Link>
+            <GoogleAuthLink href="/home" label="Register with Google" />
 
             <Link href="/home?skipped=1" className={styles.skipLink}>
               Skip profile creation
             </Link>
 
-            <p className={styles.authSub} style={{ marginTop: "0.9rem" }}>
+            <p className={`${styles.authSub} ${styles.authCenterText}`} style={{ marginTop: "0.9rem" }}>
               Already have an account?{" "}
               <Link href="/signin" className={styles.textLink}>
                 Sign in

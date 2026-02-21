@@ -1,5 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
+import LandingGrowthChart from "./components/landing/LandingGrowthChart";
+import FadeInOnView from "./components/landing/FadeInOnView";
 import styles from "./landing.module.css";
 import landingImage from "./rocket.png";
 import landingImage2 from "./ai.png";
@@ -33,28 +35,25 @@ export default function Home() {
       </section>
 
       <section className={styles.imageSection}>
-  <div className={styles.sectionInner}>
-    <div className={styles.imageFrame}>
-      {/* Protruding text box */}
-      <div className={styles.protrudingCard}>
-        <h2 className={styles.sectionTitle}>From Discussion to Direction</h2>
-        <p className={styles.sectionText}>
-          Remand helps founders and growth teams turn noisy threads into clear next actions.
-        </p>
-      </div>
-
-      {/* Rocket image moved right */}
-<div className={styles.rocketWrap}>
-  <Image
-    src={landingImage}
-    alt="Developer discussion and planning illustration"
-    className={styles.imageAsset}
-    priority
-  />
-</div>
-    </div>
-  </div>
-</section>
+        <div className={styles.sectionInner}>
+          <h2 className={styles.sectionTitle}>From Discussion to Direction</h2>
+          <p className={styles.sectionText}>
+            Remand helps founders and growth teams turn noisy threads into clear next actions.
+          </p>
+          <div className={styles.imageFrame}>
+            <FadeInOnView>
+              <Image
+                src={landingImage}
+                alt="Rocket taking off illustration"
+                className={styles.imageAsset}
+                priority
+                width={960}
+                height={540}
+              />
+            </FadeInOnView>
+          </div>
+        </div>
+      </section>
 
       <section className={styles.graphSection}>
         <div className={styles.sectionInner}>
@@ -64,38 +63,7 @@ export default function Home() {
           </p>
 
           <div className={styles.chartCard}>
-            <svg className={styles.chart} viewBox="0 0 680 280" role="img" aria-label="Growth momentum sample chart">
-              <defs>
-                <linearGradient id="momentumFill" x1="0" x2="0" y1="0" y2="1">
-                  <stop offset="0%" stopColor="#ff9f62" stopOpacity="0.4" />
-                  <stop offset="100%" stopColor="#ff9f62" stopOpacity="0.07" />
-                </linearGradient>
-              </defs>
-
-              <line x1="60" y1="40" x2="60" y2="230" stroke="#efcfb8" strokeWidth="1" />
-              <line x1="60" y1="230" x2="640" y2="230" stroke="#efcfb8" strokeWidth="1" />
-              <line x1="60" y1="180" x2="640" y2="180" stroke="#f4dcc9" strokeWidth="1" />
-              <line x1="60" y1="130" x2="640" y2="130" stroke="#f4dcc9" strokeWidth="1" />
-              <line x1="60" y1="80" x2="640" y2="80" stroke="#f4dcc9" strokeWidth="1" />
-
-              <path
-                d="M60 212 L118 205 L176 196 L234 184 L292 169 L350 154 L408 134 L466 112 L524 88 L582 67 L640 52 L640 230 L60 230 Z"
-                fill="url(#momentumFill)"
-              />
-              <path
-                d="M60 212 L118 205 L176 196 L234 184 L292 169 L350 154 L408 134 L466 112 L524 88 L582 67 L640 52"
-                fill="none"
-                stroke="#e35900"
-                strokeWidth="4"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-
-              <text x="72" y="252" fill="#9a5d3a" fontSize="12">Jan</text>
-              <text x="230" y="252" fill="#9a5d3a" fontSize="12">Apr</text>
-              <text x="390" y="252" fill="#9a5d3a" fontSize="12">Jul</text>
-              <text x="548" y="252" fill="#9a5d3a" fontSize="12">Oct</text>
-            </svg>
+            <LandingGrowthChart />
 
             <div className={styles.statRow}>
               <div className={styles.statChip}>
@@ -123,21 +91,27 @@ export default function Home() {
             into clear positioning, feature ideas, and outreach angles.
           </p>
 
-          <div className={styles.aiVisualFrame}>
-            <Image
-              src={landingImage2}
-              alt="Team using a strategic planning board"
-              className={styles.aiVisual}
-            />
-          </div>
+          <div className={styles.aiLayout}>
+            <div className={styles.aiVisualFrame}>
+              <FadeInOnView>
+                <Image
+                  src={landingImage2}
+                  alt="AI agent illustration"
+                  className={styles.aiVisual}
+                  width={960}
+                  height={540}
+                />
+              </FadeInOnView>
+            </div>
 
-          <div className={styles.aiCard}>
-            <ul className={styles.aiList}>
-              <li>Finds the strongest demand signals in noisy threads</li>
-              <li>Summarizes recurring pain points in seconds</li>
-              <li>Suggests practical go-to-market responses</li>
-            </ul>
-            <p className={styles.aiFootnote}>Built to move from buzz to decisions faster.</p>
+            <div className={styles.aiCard}>
+              <ul className={styles.aiList}>
+                <li>Finds the strongest demand signals in noisy threads</li>
+                <li>Summarizes recurring pain points in seconds</li>
+                <li>Suggests practical go-to-market responses</li>
+              </ul>
+              <p className={styles.aiFootnote}>Built to move from buzz to decisions faster.</p>
+            </div>
           </div>
         </div>
       </section>

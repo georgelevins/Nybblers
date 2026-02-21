@@ -1,4 +1,5 @@
 import Link from "next/link";
+import GoogleAuthLink from "../components/GoogleAuthLink";
 import styles from "../redditdemand.module.css";
 
 export default function SignInPage() {
@@ -8,7 +9,7 @@ export default function SignInPage() {
         <div className={styles.welcomeCard}>
           <h1 className={styles.authHeading}>Welcome to Remand</h1>
           <p className={styles.authSub}>
-            Sign in to save searches, track opportunities, and manage alerts.
+            Sign in to view previous searches, track opportunities manage alerts and work with our AI agents
           </p>
 
           <form action="/home" className={styles.authForm}>
@@ -32,11 +33,9 @@ export default function SignInPage() {
           </form>
 
           <p className={styles.authDivider}>or</p>
-          <Link href="/home" className={styles.googleButton}>
-            Sign in with Google
-          </Link>
+          <GoogleAuthLink href="/home" label="Sign in with Google" />
 
-          <p className={styles.authSub} style={{ marginTop: "0.9rem" }}>
+          <p className={`${styles.authSub} ${styles.authCenterText}`} style={{ marginTop: "0.9rem" }}>
             New here?{" "}
             <Link href="/register" className={styles.textLink}>
               Register for the first time
