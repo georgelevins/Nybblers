@@ -104,6 +104,43 @@ class AlertCreateResponse(BaseModel):
     created_at: datetime
 
 
+# --- Analytics response models ---
+
+
+class TimePoint(BaseModel):
+    date: str
+    label: str
+    value: int
+
+
+class MentionsTrendResponse(BaseModel):
+    points: list[TimePoint]
+
+
+class SubredditUsersResponse(BaseModel):
+    subreddits: dict[str, list[str]]
+
+
+class GrowthMomentumResponse(BaseModel):
+    weekly: list[TimePoint]
+    monthly: list[TimePoint]
+
+
+class TopMatch(BaseModel):
+    id: str
+    subreddit: str
+    author: str | None
+    body: str
+    score: int
+    url: str | None
+    similarity: float
+    kind: str  # "post" | "comment"
+
+
+class TopMatchesResponse(BaseModel):
+    matches: list[TopMatch]
+
+
 # --- Health ---
 
 

@@ -7,6 +7,7 @@ import {
   type AgentResponse,
   type IdeaCard,
   type EvidenceItem,
+  type RetrievalMatch,
 } from "../lib/api";
 import styles from "../redditdemand.module.css";
 
@@ -15,6 +16,13 @@ const AGENT_OPTIONS: { action: AgentAction; label: string }[] = [
   { action: "refine_idea", label: "Refine" },
   { action: "rank_idea", label: "Rank" },
 ];
+
+type AgentPanelProps = {
+  /** Pre-fill the idea input (e.g. from the search query on the results page). */
+  initialIdea?: string;
+  /** Real Reddit matches from the search — passed to the agent as retrieval context. */
+  retrievalMatches?: RetrievalMatch[];
+};
 
 function IdeaCardBlock({ card }: { card: IdeaCard }) {
   const fields = [
@@ -33,7 +41,7 @@ function IdeaCardBlock({ card }: { card: IdeaCard }) {
               <span className={styles.agentFieldLabel}>{f.label}</span>
               <span className={styles.agentFieldValue}>{f.value}</span>
             </div>
-          )
+          ),
       )}
     </div>
   );
@@ -100,11 +108,16 @@ function ResultView({ data }: { data: AgentResponse }) {
   );
 }
 
-export default function AgentPanel() {
-  const [idea, setIdea] = useState("");
+export default function AgentPanel({
+  initialIdea = "",
+  retrievalMatches,
+}: AgentPanelProps) {
+  const [idea, setIdea] = useState(initialIdea);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<AgentResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  const hasContext = retrievalMatches && retrievalMatches.length > 0;
 
   async function handleRun(action: AgentAction) {
     const text = idea.trim();
@@ -116,7 +129,7 @@ export default function AgentPanel() {
     setResult(null);
     setLoading(true);
     try {
-      const data = await runAgent(action, text);
+      const data = await runAgent(action, text, retrievalMatches);
       setResult(data);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Something went wrong.");
@@ -130,6 +143,9 @@ export default function AgentPanel() {
       <h2 className={styles.agentHeading}>Validate with AI</h2>
       <p className={styles.agentSub}>
         Flesh out, refine, or rank your idea using Reddit demand data.
+        {hasContext && (
+          <> Using <strong>{retrievalMatches.length}</strong> real Reddit posts as context.</>
+        )}
       </p>
       <div className={styles.agentForm}>
         <input
