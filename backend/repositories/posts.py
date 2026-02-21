@@ -1,23 +1,367 @@
-# TODO: implement when schema is final
-# Use database.get_pool() for connections.
-# Swap mock_data calls in routers for these functions.
+"""
+Post repository — real asyncpg + pgvector queries.
+All functions embed the query text via OpenAI before searching.
+"""
 
-# async def search_posts(
-#     query_embedding: list[float],
-#     subreddit: str | None,
-#     limit: int,
-# ) -> list[SearchResultItem]:
-#     """Embed query via OpenAI, run pgvector cosine similarity, return results."""
-#     ...
-#
-# async def get_opportunities(
-#     subreddit: str | None,
-#     limit: int,
-#     min_activity_ratio: float,
-# ) -> list[OpportunityPost]:
-#     """SELECT * FROM posts ORDER BY activity_ratio DESC ..."""
-#     ...
-#
-# async def get_thread(thread_id: str) -> ThreadDetail | None:
-#     """SELECT post + comments, build ThreadDetail."""
-#     ...
+from datetime import datetime, timezone
+
+from database import get_pool
+from models import (
+    Comment,
+    GrowthMomentumResponse,
+    MentionsTrendResponse,
+    SearchResponse,
+    SearchResultItem,
+    SubredditUsersResponse,
+    ThreadDetail,
+    TimePoint,
+    TopMatch,
+    TopMatchesResponse,
+)
+from repositories.embeddings import embed_text, to_pg_vector
+
+# Cosine distance threshold — lower = more similar (0 = identical, 2 = opposite)
+SIMILARITY_THRESHOLD = 0.7
+
+
+async def search_posts(
+    query_text: str,
+    subreddit: str | None = None,
+    limit: int = 20,
+) -> SearchResponse:
+    """Embed query, run pgvector cosine similarity search on posts, return SearchResponse."""
+    embedding = await embed_text(query_text)
+    pool = await get_pool()
+
+    base_sql = """
+        SELECT
+            id, title, subreddit, created_utc, num_comments,
+            COALESCE(activity_ratio, 0.0) AS activity_ratio,
+            last_comment_utc,
+            1 - (embedding <=> $1::vector) AS similarity_score,
+            COALESCE(reconstructed_text, body, title) AS snippet
+        FROM posts
+        WHERE embedding IS NOT NULL
+          AND embedding <=> $1::vector < $2
+        {subreddit_filter}
+        ORDER BY embedding <=> $1::vector
+        LIMIT $3
+    """
+    vec = to_pg_vector(embedding)
+    params: list = [vec, SIMILARITY_THRESHOLD, limit]
+    subreddit_filter = ""
+    if subreddit:
+        subreddit_filter = "AND subreddit = $4"
+        params.append(subreddit)
+
+    sql = base_sql.format(subreddit_filter=subreddit_filter)
+
+    async with pool.acquire() as conn:
+        rows = await conn.fetch(sql, *params)
+
+    results = [
+        SearchResultItem(
+            id=row["id"],
+            title=row["title"],
+            subreddit=row["subreddit"],
+            created_utc=row["created_utc"],
+            num_comments=row["num_comments"] or 0,
+            activity_ratio=row["activity_ratio"] or 0.0,
+            last_comment_utc=row["last_comment_utc"],
+            similarity_score=float(row["similarity_score"]),
+            snippet=(row["snippet"] or "")[:300],
+        )
+        for row in rows
+    ]
+    return SearchResponse(results=results)
+
+
+async def get_top_matches(
+    query_text: str,
+    limit: int = 10,
+) -> TopMatchesResponse:
+    """
+    Return the most semantically similar posts and comments combined.
+    Posts come from `posts` table; comments from `comments` JOIN `comment_embeddings`.
+    """
+    embedding = await embed_text(query_text)
+    vec = to_pg_vector(embedding)
+    pool = await get_pool()
+
+    # Top matching posts
+    post_sql = """
+        SELECT
+            p.id,
+            p.subreddit,
+            p.author,
+            COALESCE(p.body, p.title) AS body,
+            COALESCE(p.score, 0) AS score,
+            p.url,
+            1 - (p.embedding <=> $1::vector) AS similarity,
+            'post' AS kind
+        FROM posts p
+        WHERE p.embedding IS NOT NULL
+          AND p.embedding <=> $1::vector < $2
+        ORDER BY p.embedding <=> $1::vector
+        LIMIT $3
+    """
+
+    # Top matching comments (via comment_embeddings)
+    comment_sql = """
+        SELECT
+            c.id,
+            c.subreddit,
+            c.author,
+            c.body,
+            COALESCE(c.score, 0) AS score,
+            NULL AS url,
+            1 - (ce.embedding <=> $1::vector) AS similarity,
+            'comment' AS kind
+        FROM comments c
+        JOIN comment_embeddings ce ON ce.comment_id = c.id
+        WHERE ce.embedding <=> $1::vector < $2
+        ORDER BY ce.embedding <=> $1::vector
+        LIMIT $3
+    """
+
+    async with pool.acquire() as conn:
+        post_rows = await conn.fetch(post_sql, vec, SIMILARITY_THRESHOLD, limit)
+        comment_rows = await conn.fetch(comment_sql, vec, SIMILARITY_THRESHOLD, limit)
+
+    combined: list[TopMatch] = []
+    for row in post_rows:
+        combined.append(
+            TopMatch(
+                id=row["id"],
+                subreddit=row["subreddit"],
+                author=row["author"],
+                body=(row["body"] or "")[:500],
+                score=row["score"],
+                url=row["url"],
+                similarity=float(row["similarity"]),
+                kind="post",
+            )
+        )
+    for row in comment_rows:
+        combined.append(
+            TopMatch(
+                id=row["id"],
+                subreddit=row["subreddit"],
+                author=row["author"],
+                body=(row["body"] or "")[:500],
+                score=row["score"],
+                url=None,
+                similarity=float(row["similarity"]),
+                kind="comment",
+            )
+        )
+
+    # Sort combined by similarity descending, return top `limit`
+    combined.sort(key=lambda m: m.similarity, reverse=True)
+    return TopMatchesResponse(matches=combined[:limit])
+
+
+async def get_mentions_over_time(query_text: str) -> MentionsTrendResponse:
+    """
+    Monthly count of posts semantically similar to the query.
+    Returns a time series sorted oldest-first.
+    """
+    embedding = await embed_text(query_text)
+    vec = to_pg_vector(embedding)
+    pool = await get_pool()
+
+    sql = """
+        SELECT
+            TO_CHAR(created_utc, 'YYYY-MM') AS month,
+            COUNT(*) AS cnt
+        FROM posts
+        WHERE embedding IS NOT NULL
+          AND embedding <=> $1::vector < $2
+        GROUP BY month
+        ORDER BY month
+    """
+
+    async with pool.acquire() as conn:
+        rows = await conn.fetch(sql, vec, SIMILARITY_THRESHOLD)
+
+    points = [
+        TimePoint(
+            date=f"{row['month']}-01",
+            label=_format_month_label(row["month"]),
+            value=int(row["cnt"]),
+        )
+        for row in rows
+    ]
+    return MentionsTrendResponse(points=points)
+
+
+async def get_users_by_subreddit(
+    query_text: str,
+    limit: int = 50,
+) -> SubredditUsersResponse:
+    """
+    Unique authors per subreddit from posts similar to the query.
+    Returns { subreddit: [username, ...] }.
+    """
+    embedding = await embed_text(query_text)
+    vec = to_pg_vector(embedding)
+    pool = await get_pool()
+
+    sql = """
+        SELECT subreddit, author
+        FROM posts
+        WHERE embedding IS NOT NULL
+          AND embedding <=> $1::vector < $2
+          AND author IS NOT NULL
+          AND author <> '[deleted]'
+          AND author <> 'AutoModerator'
+        ORDER BY embedding <=> $1::vector
+        LIMIT $3
+    """
+
+    async with pool.acquire() as conn:
+        rows = await conn.fetch(sql, vec, SIMILARITY_THRESHOLD, limit)
+
+    subreddits: dict[str, list[str]] = {}
+    seen: set[tuple[str, str]] = set()
+    for row in rows:
+        sub = f"r/{row['subreddit']}"
+        author = row["author"]
+        if (sub, author) not in seen:
+            seen.add((sub, author))
+            subreddits.setdefault(sub, []).append(author)
+
+    return SubredditUsersResponse(subreddits=subreddits)
+
+
+async def get_growth_data(query_text: str) -> GrowthMomentumResponse:
+    """
+    Weekly and monthly time series of post counts similar to the query.
+    """
+    embedding = await embed_text(query_text)
+    vec = to_pg_vector(embedding)
+    pool = await get_pool()
+
+    monthly_sql = """
+        SELECT
+            TO_CHAR(created_utc, 'YYYY-MM') AS period,
+            COUNT(*) AS cnt
+        FROM posts
+        WHERE embedding IS NOT NULL
+          AND embedding <=> $1::vector < $2
+        GROUP BY period
+        ORDER BY period
+    """
+
+    weekly_sql = """
+        SELECT
+            TO_CHAR(DATE_TRUNC('week', created_utc), 'YYYY-MM-DD') AS period,
+            COUNT(*) AS cnt
+        FROM posts
+        WHERE embedding IS NOT NULL
+          AND embedding <=> $1::vector < $2
+        GROUP BY period
+        ORDER BY period
+    """
+
+    async with pool.acquire() as conn:
+        monthly_rows = await conn.fetch(monthly_sql, vec, SIMILARITY_THRESHOLD)
+        weekly_rows = await conn.fetch(weekly_sql, vec, SIMILARITY_THRESHOLD)
+
+    monthly = [
+        TimePoint(
+            date=f"{row['period']}-01",
+            label=_format_month_label(row["period"]),
+            value=int(row["cnt"]),
+        )
+        for row in monthly_rows
+    ]
+
+    weekly = [
+        TimePoint(
+            date=row["period"],
+            label=_format_week_label(row["period"]),
+            value=int(row["cnt"]),
+        )
+        for row in weekly_rows
+    ]
+
+    return GrowthMomentumResponse(weekly=weekly, monthly=monthly)
+
+
+async def get_thread(thread_id: str) -> ThreadDetail | None:
+    """Fetch a single post with all its comments."""
+    pool = await get_pool()
+
+    async with pool.acquire() as conn:
+        post_row = await conn.fetchrow(
+            "SELECT * FROM posts WHERE id = $1",
+            thread_id,
+        )
+        if post_row is None:
+            return None
+
+        comment_rows = await conn.fetch(
+            """
+            SELECT id, post_id, parent_id, parent_type, author, body,
+                   created_utc, COALESCE(score, 0) AS score,
+                   COALESCE(controversiality, 0) AS controversiality
+            FROM comments
+            WHERE post_id = $1
+            ORDER BY created_utc
+            """,
+            thread_id,
+        )
+
+    comments = [
+        Comment(
+            id=r["id"],
+            post_id=r["post_id"],
+            parent_id=r["parent_id"],
+            parent_type=r["parent_type"],
+            author=r["author"],
+            body=r["body"],
+            created_utc=r["created_utc"],
+            score=r["score"],
+            controversiality=r["controversiality"],
+        )
+        for r in comment_rows
+    ]
+
+    return ThreadDetail(
+        id=post_row["id"],
+        subreddit=post_row["subreddit"],
+        title=post_row["title"],
+        body=post_row["body"],
+        author=post_row["author"],
+        created_utc=post_row["created_utc"],
+        score=post_row["score"],
+        url=post_row["url"],
+        num_comments=post_row["num_comments"],
+        last_comment_utc=post_row["last_comment_utc"],
+        recent_comment_count=post_row["recent_comment_count"],
+        activity_ratio=post_row["activity_ratio"],
+        reconstructed_text=post_row["reconstructed_text"],
+        comments=comments,
+    )
+
+
+# --- Helpers ---
+
+
+def _format_month_label(ym: str) -> str:
+    """Turn '2023-06' → 'Jun 23'."""
+    try:
+        dt = datetime.strptime(ym, "%Y-%m")
+        return dt.strftime("%b %y")
+    except ValueError:
+        return ym
+
+
+def _format_week_label(date_str: str) -> str:
+    """Turn '2023-06-05' → 'Jun 05'."""
+    try:
+        dt = datetime.strptime(date_str, "%Y-%m-%d")
+        return dt.strftime("%b %d")
+    except ValueError:
+        return date_str

@@ -1,28 +1,35 @@
-# MOCK DATA — replace with real DB queries when schema is populated
+"""
+Alerts router — create user search alerts.
+"""
 
-from datetime import datetime
-from uuid import uuid4
+from fastapi import APIRouter, HTTPException
 
-from fastapi import APIRouter
-
+import database
 from models import AlertCreateRequest, AlertCreateResponse
+from repositories import alerts as alerts_repo
 
 router = APIRouter()
+
+
+def _require_pool():
+    if database._pool is None:
+        raise HTTPException(
+            status_code=503,
+            detail="Database not available. Check DATABASE_URL configuration.",
+        )
 
 
 @router.post("", response_model=AlertCreateResponse)
 async def create_alert(request: AlertCreateRequest) -> AlertCreateResponse:
     """
     Create an alert for a search query.
-    User will be notified when new matching posts appear.
+    Embeds the query via OpenAI and stores it with the user's email.
     """
-    # TODO: INSERT INTO alerts (user_email, query, query_embedding, ...)
-    # Embed query via OpenAI first, then insert. Use database.get_pool() for connection.
-    created_at = datetime.utcnow()
-    alert_id = uuid4()
-    return AlertCreateResponse(
-        id=alert_id,
-        user_email=request.user_email,
-        query=request.query,
-        created_at=created_at,
-    )
+    _require_pool()
+    try:
+        return await alerts_repo.create_alert(
+            user_email=str(request.user_email),
+            query=request.query,
+        )
+    except RuntimeError as exc:
+        raise HTTPException(status_code=503, detail=str(exc))

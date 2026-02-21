@@ -3,55 +3,46 @@
 import { useMemo, useState } from "react";
 import LineChart from "./LineChart";
 import styles from "@/app/redditdemand.module.css";
-import {
-  MONTHLY_LAUNCH_EVENTS,
-  MONTHLY_TOPIC_MENTIONS,
-  WEEKLY_LAUNCH_EVENTS,
-  WEEKLY_TOPIC_MENTIONS,
-  getGrowthRate,
-  type LaunchEvent,
-  type TimePoint,
-} from "@/app/lib/resultsVisualData";
+import { getGrowthRate } from "@/app/lib/resultsVisualData";
+import type { GrowthData } from "@/app/lib/api";
 
 type Mode = "weekly" | "monthly";
 
 type GrowthMomentumScreenProps = {
   query: string;
+  data: GrowthData;
 };
 
-function toMarkers(points: TimePoint[], events: LaunchEvent[]) {
-  return events
-    .map((event) => {
-      const index = points.findIndex((point) => point.date >= event.date);
-      if (index < 0) return null;
-      return {
-        index,
-        label: event.label,
-        color: "#d04f00",
-      };
-    })
-    .filter((marker): marker is { index: number; label: string; color: string } => marker !== null);
-}
-
-export default function GrowthMomentumScreen({ query }: GrowthMomentumScreenProps) {
+export default function GrowthMomentumScreen({ query, data }: GrowthMomentumScreenProps) {
   const [mode, setMode] = useState<Mode>("monthly");
 
-  const points = mode === "monthly" ? MONTHLY_TOPIC_MENTIONS : WEEKLY_TOPIC_MENTIONS;
-  const launchEvents = mode === "monthly" ? MONTHLY_LAUNCH_EVENTS : WEEKLY_LAUNCH_EVENTS;
+  const points = mode === "monthly" ? data.monthly : data.weekly;
 
   const growth = useMemo(() => getGrowthRate(points), [points]);
-  const markers = useMemo(() => toMarkers(points, launchEvents), [points, launchEvents]);
 
   const first = points[0]?.value ?? 0;
   const latest = points[points.length - 1]?.value ?? 0;
   const delta = latest - first;
+
+  if (data.monthly.length === 0 && data.weekly.length === 0) {
+    return (
+      <section className={styles.visualCard}>
+        <div className={styles.visualHeader}>
+          <h2 className={styles.visualTitle}>Growth Over Time</h2>
+          <p className={styles.visualSub}>
+            No growth data found for <strong>{query}</strong>.
+          </p>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className={styles.visualCard}>
       <div className={styles.visualHeader}>
         <h2 className={styles.visualTitle}>Growth Over Time (Momentum &gt; Raw Numbers)</h2>
         <p className={styles.visualSub}>
-          Trend velocity for <strong>{query}</strong> with launch milestones overlaid.
+          Trend velocity for <strong>{query}</strong>.
         </p>
       </div>
 
@@ -89,22 +80,17 @@ export default function GrowthMomentumScreen({ query }: GrowthMomentumScreenProp
         </div>
       </div>
 
-      <div className={styles.chartShell}>
-        <LineChart
-          points={points}
-          markers={markers}
-          xLabel={mode === "weekly" ? "Time (weeks)" : "Time (months)"}
-          yLabel="Mentions"
-        />
-      </div>
-
-      <div className={styles.launchList}>
-        {launchEvents.map((event) => (
-          <span key={`${event.date}-${event.label}`} className={styles.launchTag}>
-            {event.label} · {event.date}
-          </span>
-        ))}
-      </div>
+      {points.length > 0 ? (
+        <div className={styles.chartShell}>
+          <LineChart
+            points={points}
+            xLabel={mode === "weekly" ? "Time (weeks)" : "Time (months)"}
+            yLabel="Mentions"
+          />
+        </div>
+      ) : (
+        <p className={styles.agentSub}>No {mode} data available.</p>
+      )}
     </section>
   );
 }

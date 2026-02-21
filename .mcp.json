@@ -1,0 +1,20 @@
+{
+  "mcpServers": {
+    "Postgres_RedditDemand": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-postgres",
+        "postgresql://redditdemand:yourchosenpassword@51.83.42.203:5432/redditdemand"
+      ],
+      "env": {
+        "DATABASE_URL": "postgresql://redditdemand:yourchosenpassword@51.83.42.203:5432/redditdemand",
+        "DB_HOST": "51.83.42.203",
+        "DB_PORT": "5432",
+        "DB_USER": "redditdemand",
+        "DB_PASSWORD": "yourchosenpassword",
+        "DB_NAME": "redditdemand"
+      }
+    }
+  }
+}
