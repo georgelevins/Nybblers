@@ -1,43 +1,48 @@
 import Link from "next/link";
 import styles from "./redditdemand.module.css";
-import { EXAMPLE_SEARCHES } from "./lib/redditDemandData";
 
 export default function Home() {
   return (
-    <main className={`${styles.page} ${styles.homePage}`}>
-      <section className={styles.homeWrap}>
-        <h1 className={styles.wordmark}>RedditDemand</h1>
-        <p className={styles.tagline}>Signal from the Noise</p>
+    <main className={styles.authPage}>
+      <section className={styles.authShell}>
+        <div className={styles.welcomeCard}>
+          <h1 className={styles.authHeading}>Welcome to RedditDemand</h1>
+          <p className={styles.authSub}>
+            Sign in to save searches, track opportunities, and manage alerts.
+          </p>
 
-        <form action="/results" className={styles.searchForm}>
-          <input
-            className={styles.searchInput}
-            name="q"
-            placeholder="e.g. invoicing software for freelancers..."
-            aria-label="Search Reddit demand"
-            autoComplete="off"
-          />
-          <input type="hidden" name="view" value="demand" />
-          <button className={styles.searchButton} type="submit">
-            Search
-          </button>
-        </form>
+          <form action="/home" className={styles.authForm}>
+            <input
+              className={styles.authInput}
+              name="email"
+              type="email"
+              placeholder="Email"
+              aria-label="Email"
+            />
+            <input
+              className={styles.authInput}
+              name="password"
+              type="password"
+              placeholder="Password"
+              aria-label="Password"
+            />
+            <button type="submit" className={styles.primaryButton}>
+              Sign in
+            </button>
+          </form>
 
-        <div className={styles.examples}>
-          {EXAMPLE_SEARCHES.map((example) => (
-            <Link
-              key={example}
-              href={`/results?q=${encodeURIComponent(example)}&view=demand`}
-              className={styles.examplePill}
-            >
-              {example}
+          <p className={styles.authDivider}>or</p>
+          <Link href="/home" className={styles.googleButton}>
+            Sign in with Google
+          </Link>
+
+          <p className={styles.authSub} style={{ marginTop: "0.9rem" }}>
+            New here?{" "}
+            <Link href="/register" className={styles.textLink}>
+              Register for the first time
             </Link>
-          ))}
+          </p>
         </div>
-
-        <p className={styles.ticker}>
-          23 million comments indexed across 28 subreddits
-        </p>
       </section>
     </main>
   );

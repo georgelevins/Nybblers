@@ -134,7 +134,7 @@
   margin: 0 auto;
   padding: 1rem 0;
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   gap: 0.8rem;
 }
 
@@ -152,6 +152,28 @@
 
 .compactSearch {
   flex: 1;
+  margin-top: 0;
+}
+
+.topHomeButton {
+  border: none;
+  border-radius: 999px;
+  padding: 0.8rem 1.05rem;
+  background: linear-gradient(140deg, #ff8736, #e35900);
+  color: #fff;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: transform 0.14s ease, filter 0.14s ease;
+  text-decoration: none;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+}
+
+.topHomeButton:hover {
+  transform: translateY(-1px);
+  filter: brightness(0.97);
 }
 
 .tabs {
@@ -425,6 +447,225 @@
   flex-shrink: 0;
 }
 
+.authPage {
+  min-height: 100vh;
+  background: linear-gradient(160deg, #fff1e2 0%, #ffd8ad 36%, #ffb877 100%);
+  color: #2b170e;
+}
+
+.authShell {
+  width: min(1080px, calc(100% - 2rem));
+  margin: 0 auto;
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 2rem 0;
+}
+
+.welcomeCard {
+  width: min(520px, 100%);
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(209, 98, 36, 0.18);
+  border-radius: 18px;
+  box-shadow: 0 18px 42px rgba(125, 52, 13, 0.12);
+  padding: 1.2rem;
+}
+
+.authHeading {
+  font-family: var(--font-dm-serif), serif;
+  font-size: 1.7rem;
+}
+
+.authSub {
+  margin-top: 0.25rem;
+  color: #8d4f2f;
+  font-size: 0.84rem;
+  line-height: 1.5;
+}
+
+.authForm {
+  margin-top: 0.9rem;
+  display: grid;
+  gap: 0.55rem;
+}
+
+.authInput {
+  width: 100%;
+  border: 1px solid rgba(209, 98, 36, 0.2);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.95);
+  padding: 0.7rem 0.78rem;
+  color: #442515;
+  font-size: 0.84rem;
+}
+
+.authInput:focus {
+  outline: 2px solid rgba(208, 79, 0, 0.2);
+  border-color: #d04f00;
+}
+
+.primaryButton {
+  border: none;
+  border-radius: 10px;
+  background: #d04f00;
+  color: #fff;
+  font-size: 0.84rem;
+  padding: 0.7rem 0.9rem;
+  cursor: pointer;
+  transition: filter 0.14s ease;
+  text-decoration: none;
+  display: inline-flex;
+  justify-content: center;
+}
+
+.primaryButton:hover {
+  filter: brightness(0.95);
+}
+
+.googleButton {
+  border: 1px solid rgba(209, 98, 36, 0.25);
+  border-radius: 10px;
+  background: #fff;
+  color: #7e492d;
+  font-size: 0.84rem;
+  padding: 0.7rem 0.9rem;
+  cursor: pointer;
+  transition: border-color 0.14s ease, color 0.14s ease, background 0.14s ease;
+  text-decoration: none;
+  display: inline-flex;
+  justify-content: center;
+}
+
+.googleButton:hover {
+  border-color: #d04f00;
+  color: #d04f00;
+  background: #fff8f2;
+}
+
+.authDivider {
+  margin: 0.7rem 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #9d6342;
+  font-size: 0.73rem;
+}
+
+.authDivider::before,
+.authDivider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: rgba(209, 98, 36, 0.2);
+}
+
+.textLink {
+  color: #d04f00;
+  text-decoration: none;
+  font-size: 0.8rem;
+}
+
+.textLink:hover {
+  text-decoration: underline;
+}
+
+.registerLayout {
+  width: min(980px, 100%);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border-radius: 18px;
+  overflow: hidden;
+  border: 1px solid rgba(209, 98, 36, 0.18);
+  box-shadow: 0 18px 42px rgba(125, 52, 13, 0.12);
+}
+
+.registerPanel {
+  background: rgba(255, 255, 255, 0.93);
+  padding: 1.2rem;
+}
+
+.overviewPanel {
+  background: linear-gradient(160deg, #ff8b3b 0%, #e85d00 100%);
+  color: #fff7ef;
+  padding: 1.2rem;
+}
+
+.overviewPanel h2 {
+  font-family: var(--font-dm-serif), serif;
+  font-size: 1.7rem;
+}
+
+.overviewPanel p {
+  margin-top: 0.55rem;
+  font-size: 0.86rem;
+  line-height: 1.6;
+}
+
+.overviewList {
+  margin-top: 0.9rem;
+  list-style: none;
+  display: grid;
+  gap: 0.48rem;
+  font-size: 0.82rem;
+}
+
+.overviewList li {
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 10px;
+  padding: 0.55rem 0.65rem;
+}
+
+.skipLink {
+  margin-top: 0.7rem;
+  display: inline-flex;
+  color: #9a5a37;
+  font-size: 0.78rem;
+  text-decoration: none;
+}
+
+.skipLink:hover {
+  color: #d04f00;
+}
+
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(20, 10, 3, 0.45);
+  display: grid;
+  place-items: center;
+  z-index: 25;
+  padding: 1rem;
+}
+
+.modalCard {
+  width: min(460px, 100%);
+  background: #fff;
+  border-radius: 14px;
+  border: 1px solid rgba(209, 98, 36, 0.18);
+  box-shadow: 0 20px 40px rgba(20, 10, 3, 0.2);
+  padding: 1rem;
+}
+
+.modalTitle {
+  font-family: var(--font-dm-serif), serif;
+  font-size: 1.25rem;
+  color: #622f13;
+}
+
+.modalBody {
+  margin-top: 0.45rem;
+  color: #79472b;
+  font-size: 0.84rem;
+  line-height: 1.55;
+}
+
+.modalActions {
+  margin-top: 0.75rem;
+  display: flex;
+  justify-content: flex-end;
+}
+
 @media (max-width: 720px) {
   .topBarInner {
     width: min(1040px, calc(100% - 1rem));
@@ -441,5 +682,9 @@
 
   .homeWrap {
     width: min(760px, calc(100% - 1rem));
+  }
+
+  .registerLayout {
+    grid-template-columns: 1fr;
   }
 }
