@@ -1,102 +1,138 @@
+import Image from "next/image";
 import Link from "next/link";
 import styles from "./landing.module.css";
+import landingImage from "./landingimage.avif";
+import landingImage2 from "./landingimage2.avif";
 
 export default function Home() {
   return (
     <main className={styles.page}>
       <section className={styles.hero}>
-        <h1 className={styles.title}>
-          <span>Remand</span>
-          <span className={styles.subtitle}>Where Ideas Meet Discussion</span>
-        </h1>
+        <div className={styles.heroGlow} />
+        <div className={styles.heroInner}>
+          <h1 className={styles.brandWord}>Remand</h1>
+          <p className={styles.tagline}>Where Ideas Meet Discussion</p>
 
-        <p className={styles.supporting}>
-          Turn Reddit buzz into clear demand signals. Search, validate momentum, and brainstorm next
-          moves with our embedded AI agent.
-        </p>
+          <p className={styles.heroSupport}>
+            Track market buzz, measure demand momentum, and discover conversations where your
+            next customers are already talking.
+          </p>
 
-        <div className={styles.actions}>
-          <Link href="/register" className={styles.primaryButton}>
-            Register
-          </Link>
-          <Link href="/signin" className={styles.secondaryButton}>
-            Sign In
-          </Link>
-          <Link href="/home" className={styles.exploreButton}>
-            Explore Product
-          </Link>
+          <div className={styles.actions}>
+            <Link href="/register" className={styles.primaryButton}>
+              Register
+            </Link>
+            <Link href="/signin" className={styles.secondaryButton}>
+              Sign In
+            </Link>
+            <Link href="/home" className={styles.exploreButton}>
+              Explore Product
+            </Link>
+          </div>
         </div>
       </section>
 
-      <section className={styles.previewGrid}>
-        <article className={styles.card}>
-          <div className={styles.cardHeader}>
-            <h2 className={styles.cardTitle}>Growth Momentum Preview</h2>
-            <span className={styles.cardBadge}>example</span>
+      <section className={styles.imageSection}>
+        <div className={styles.sectionInner}>
+          <h2 className={styles.sectionTitle}>From Discussion to Direction</h2>
+          <p className={styles.sectionText}>
+            Remand helps founders and growth teams turn noisy threads into clear next actions.
+          </p>
+          <div className={styles.imageFrame}>
+            <Image
+              src={landingImage}
+              alt="Developer discussion and planning illustration"
+              className={styles.imageAsset}
+              priority
+            />
           </div>
+        </div>
+      </section>
 
-          <div className={styles.chartWrap}>
-            <svg className={styles.chart} viewBox="0 0 560 220" role="img" aria-label="Growth momentum example chart">
+      <section className={styles.graphSection}>
+        <div className={styles.sectionInner}>
+          <h2 className={styles.sectionTitle}>Growth Momentum Preview</h2>
+          <p className={styles.sectionText}>
+            See how often a topic is discussed over time and spot when momentum starts to accelerate.
+          </p>
+
+          <div className={styles.chartCard}>
+            <svg className={styles.chart} viewBox="0 0 680 280" role="img" aria-label="Growth momentum sample chart">
               <defs>
                 <linearGradient id="momentumFill" x1="0" x2="0" y1="0" y2="1">
-                  <stop offset="0%" stopColor="#ff9f62" stopOpacity="0.44" />
-                  <stop offset="100%" stopColor="#ff9f62" stopOpacity="0.06" />
+                  <stop offset="0%" stopColor="#ff9f62" stopOpacity="0.4" />
+                  <stop offset="100%" stopColor="#ff9f62" stopOpacity="0.07" />
                 </linearGradient>
               </defs>
 
-              <line x1="44" y1="30" x2="44" y2="188" stroke="#efcfb8" strokeWidth="1" />
-              <line x1="44" y1="188" x2="536" y2="188" stroke="#efcfb8" strokeWidth="1" />
+              <line x1="60" y1="40" x2="60" y2="230" stroke="#efcfb8" strokeWidth="1" />
+              <line x1="60" y1="230" x2="640" y2="230" stroke="#efcfb8" strokeWidth="1" />
+              <line x1="60" y1="180" x2="640" y2="180" stroke="#f4dcc9" strokeWidth="1" />
+              <line x1="60" y1="130" x2="640" y2="130" stroke="#f4dcc9" strokeWidth="1" />
+              <line x1="60" y1="80" x2="640" y2="80" stroke="#f4dcc9" strokeWidth="1" />
 
               <path
-                d="M44 170 L95 164 L146 156 L197 144 L248 130 L299 118 L350 102 L401 84 L452 66 L503 52 L536 42 L536 188 L44 188 Z"
+                d="M60 212 L118 205 L176 196 L234 184 L292 169 L350 154 L408 134 L466 112 L524 88 L582 67 L640 52 L640 230 L60 230 Z"
                 fill="url(#momentumFill)"
               />
               <path
-                d="M44 170 L95 164 L146 156 L197 144 L248 130 L299 118 L350 102 L401 84 L452 66 L503 52 L536 42"
+                d="M60 212 L118 205 L176 196 L234 184 L292 169 L350 154 L408 134 L466 112 L524 88 L582 67 L640 52"
                 fill="none"
                 stroke="#e35900"
                 strokeWidth="4"
                 strokeLinecap="round"
                 strokeLinejoin="round"
               />
+
+              <text x="72" y="252" fill="#9a5d3a" fontSize="12">Jan</text>
+              <text x="230" y="252" fill="#9a5d3a" fontSize="12">Apr</text>
+              <text x="390" y="252" fill="#9a5d3a" fontSize="12">Jul</text>
+              <text x="548" y="252" fill="#9a5d3a" fontSize="12">Oct</text>
             </svg>
-          </div>
 
-          <div className={styles.statRow}>
-            <div className={styles.statChip}>
-              <span>Growth Rate</span>
-              <strong>+62%</strong>
-            </div>
-            <div className={styles.statChip}>
-              <span>Weekly Mentions</span>
-              <strong>118</strong>
-            </div>
-            <div className={styles.statChip}>
-              <span>Momentum</span>
-              <strong>Rising</strong>
+            <div className={styles.statRow}>
+              <div className={styles.statChip}>
+                <span>Growth Rate</span>
+                <strong>+62%</strong>
+              </div>
+              <div className={styles.statChip}>
+                <span>Current Mentions</span>
+                <strong>118/week</strong>
+              </div>
+              <div className={styles.statChip}>
+                <span>Momentum</span>
+                <strong>Rising</strong>
+              </div>
             </div>
           </div>
-        </article>
+        </div>
+      </section>
 
-        <article className={styles.card}>
-          <div className={styles.cardHeader}>
-            <h2 className={styles.cardTitle}>Embedded AI Agent</h2>
-            <span className={styles.cardBadge}>always on</span>
-          </div>
-
-          <p className={styles.aiText}>
-            The AI agent powers your search and helps brainstorm positioning, replies, and feature
-            ideas from the exact conversations your users are already having.
+      <section className={styles.aiSection}>
+        <div className={styles.sectionInner}>
+          <h2 className={styles.sectionTitle}>Embedded AI Agent</h2>
+          <p className={styles.sectionText}>
+            Our agent powers your search and brainstorms with you, turning raw Reddit discussions
+            into clear positioning, feature ideas, and outreach angles.
           </p>
 
-          <ul className={styles.aiList}>
-            <li>Finds demand signals behind messy discussion threads</li>
-            <li>Summarizes user pain points into actionable themes</li>
-            <li>Suggests reply angles and product opportunities</li>
-          </ul>
+          <div className={styles.aiVisualFrame}>
+            <Image
+              src={landingImage2}
+              alt="Team using a strategic planning board"
+              className={styles.aiVisual}
+            />
+          </div>
 
-          <p className={styles.aiFootnote}>From buzz to decisions, in one workflow.</p>
-        </article>
+          <div className={styles.aiCard}>
+            <ul className={styles.aiList}>
+              <li>Finds the strongest demand signals in noisy threads</li>
+              <li>Summarizes recurring pain points in seconds</li>
+              <li>Suggests practical go-to-market responses</li>
+            </ul>
+            <p className={styles.aiFootnote}>Built to move from buzz to decisions faster.</p>
+          </div>
+        </div>
       </section>
     </main>
   );
