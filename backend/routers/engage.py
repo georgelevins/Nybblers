@@ -27,16 +27,17 @@ def draft_reply(req: DraftReplyRequest) -> DraftReplyResponse:
     Uses Claude to write a genuine, non-promotional reply that adds value.
     """
     system = (
-        "You are writing a genuine, helpful Reddit reply. "
-        "The reply must be driven by what the user has provided as their business idea or topic — that is the main basis for your response. "
-        "Connect it naturally to the thread so your reply fits the conversation; do not ignore the thread. "
-        "Be concise (2-4 sentences), conversational, and non-promotional (add value, don't pitch). "
+        "You are writing a Reddit reply where the user is recommending their own product or business to someone in the thread. "
+        "The reply must specifically mention and recommend the exact product/tool the user described — by name if they gave one (e.g. FreeVoice). "
+        "Write as the user: first-person, genuine, helpful (e.g. 'I built...', 'I use X for...', 'Something like [their product] could help because...'). "
+        "Do not recommend other tools or platforms; the reply is about the user's own product fitting the thread. "
+        "Be concise (2-4 sentences), conversational, and natural — not salesy. "
         "Return only the reply text — no preamble, no quotes around it."
     )
     user = (
-        f"What the user entered (this is the basis for your reply): {req.query}\n\n"
+        f"The user's own product/business (they are recommending this in the reply): {req.query}\n\n"
         f'Thread they are replying to: r/{req.thread_subreddit} — "{req.thread_title}"\n\n'
-        "Write a reply that is based on the user's input above and that fits naturally as a helpful response in this thread."
+        "Write a reply where the user recommends their product above in a natural, helpful way that fits this thread. Mention their product by name or clearly. Do not suggest other tools."
     )
     draft = complete(system=system, user=user, max_tokens=300)
     return DraftReplyResponse(draft=draft)
