@@ -189,9 +189,6 @@ export default function ReplyComposer({
           >
             {copied ? "Copied!" : "Copy Reply"}
           </button>
-          <span className={styles.engagePostNote}>
-            Reddit API posting coming soon — copy and post manually for now.
-          </span>
         </div>
       </div>
     </>
