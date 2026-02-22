@@ -81,14 +81,14 @@ function ResultView({ data }: { data: AgentResponse }) {
         <p className={styles.agentRationale}>{wellOptimisedMessage}</p>
       )}
       {!enhanceSuggested && !enhanceError && !wellOptimisedMessage && enhancedIdeaText && (
-        <p className={styles.agentRationale}>
-          We tested an enhanced variant but it didn’t get better traction than your idea. Your idea is strong as-is.
-        </p>
-      )}
-      {enhancedIdeaText && !enhanceSuggested && !enhanceError && !wellOptimisedMessage && (
-        <p className={styles.agentRationale} style={{ marginTop: "0.5rem" }}>
-          <strong>Enhanced variant (not suggested):</strong> {enhancedIdeaText}
-        </p>
+        <>
+          <p className={styles.agentRationale}>
+            We tested an enhanced variant but it didn’t get better traction than your idea. Your idea is strong as-is.
+          </p>
+          <p className={styles.agentRationale} style={{ marginTop: "0.5rem" }}>
+            <strong>Enhanced variant (not suggested):</strong> {enhancedIdeaText}
+          </p>
+        </>
       )}
       {originalTraction !== null && (
         <p className={styles.agentRationale} style={{ marginTop: "0.5rem", fontSize: "0.9em" }}>
