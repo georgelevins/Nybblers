@@ -2,7 +2,7 @@
 Engage router: endpoints for the engagement campaign feature.
 """
 
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
 from agent.claude_client import complete
@@ -40,5 +40,15 @@ def draft_reply(req: DraftReplyRequest) -> DraftReplyResponse:
         f'Thread they are replying to: r/{req.thread_subreddit} — "{req.thread_title}"\n\n'
         "Write a reply where the user recommends their product above in a natural, helpful way that fits this thread. Mention their product by name or clearly. Do not suggest other tools."
     )
-    draft = complete(system=system, user=user, max_tokens=300)
-    return DraftReplyResponse(draft=draft)
+    try:
+        draft = complete(system=system, user=user, max_tokens=300)
+        return DraftReplyResponse(draft=draft)
+    except RuntimeError as e:
+        if "API key" in str(e) or "ANTHROPIC_API_KEY" in str(e):
+            raise HTTPException(
+                status_code=503,
+                detail="AI draft not configured (missing ANTHROPIC_API_KEY). Set it in backend .env.",
+            )
+        raise HTTPException(status_code=502, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"Claude API error: {e!s}")

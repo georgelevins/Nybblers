@@ -4,29 +4,26 @@ const BACKEND_BASE =
   (process.env.API_URL ?? process.env.NEXT_PUBLIC_API_URL ?? "").trim() ||
   "http://localhost:8000";
 
-export async function POST(request: NextRequest) {
+export async function GET(request: NextRequest) {
   try {
-    const body = await request.json();
-    const res = await fetch(`${BACKEND_BASE}/engage/draft-reply`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
+    const { searchParams } = new URL(request.url);
+    const q = searchParams.get("q")?.trim() ?? "";
+    const limit = searchParams.get("limit") ?? "10";
+    const params = new URLSearchParams({ q, limit });
+    const res = await fetch(`${BACKEND_BASE}/search/top-matches?${params}`);
     const raw = await res.text();
-    let data: { draft?: string; detail?: string };
+    let data: unknown;
     try {
-      data = raw ? (JSON.parse(raw) as { draft?: string; detail?: string }) : {};
+      data = raw ? JSON.parse(raw) : {};
     } catch {
-      // Backend returned non-JSON (e.g. HTML error page or plain text)
-      const detail = raw?.slice(0, 200) || res.statusText;
       return NextResponse.json(
-        { detail: res.ok ? "Invalid response from API" : detail },
+        { detail: res.ok ? "Invalid response from API" : raw?.slice(0, 200) || res.statusText },
         { status: res.ok ? 502 : res.status }
       );
     }
     if (!res.ok) {
       return NextResponse.json(
-        { detail: data.detail ?? res.statusText },
+        { detail: (data as { detail?: string }).detail ?? res.statusText },
         { status: res.status }
       );
     }
