@@ -324,6 +324,15 @@ export default function ResultsWorkspace({
           </Link>
         </div>
 
+        <div className={styles.engageCta}>
+          <p className={styles.engageCtaText}>
+            Some of these posts may still be active.{" "}
+            <a href={`/engage?q=${encodeURIComponent(query)}`} className={styles.engageLink}>
+              Run an engagement campaign →
+            </a>
+          </p>
+        </div>
+
         <div className={styles.resultsPanelsViewport}>
           <div
             className={`${styles.resultsPanelsGrid} ${hasExpandedCard ? styles.resultsPanelsGridHasExpanded : ""}`.trim()}

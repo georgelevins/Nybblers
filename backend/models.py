@@ -141,6 +141,29 @@ class TopMatchesResponse(BaseModel):
     matches: list[TopMatch]
 
 
+# --- Active threads (engagement campaign) ---
+
+
+class ActiveThread(BaseModel):
+    id: str
+    title: str
+    subreddit: str
+    url: str | None
+    last_comment_utc: datetime | None
+    score: int
+    num_comments: int
+    recent_comments: int        # comments within the activity window
+    velocity: float             # recent_comments / window_hours
+    estimated_impressions: int  # score*4 + num_comments*100
+
+
+class ActiveThreadsResponse(BaseModel):
+    active_count: int
+    total_estimated_impressions: int
+    window_hours: int
+    threads: list[ActiveThread]
+
+
 # --- Health ---
 
 

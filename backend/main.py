@@ -2,23 +2,23 @@
 RedditDemand API — FastAPI backend for demand intelligence from Reddit.
 """
 
+# Load .env BEFORE any other imports so module-level env reads (e.g. EMBEDDING_BACKEND) pick it up.
+from pathlib import Path
+from dotenv import load_dotenv
+
+_env_path = Path(__file__).resolve().parent / ".env"
+load_dotenv(dotenv_path=_env_path)
+load_dotenv()  # fallback: .env in current working directory
+
 from contextlib import asynccontextmanager
 from datetime import datetime
 
-from pathlib import Path
-
-from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from database import close_pool, get_pool, init_pool
 from models import DatabaseHealthResponse, HealthResponse
-from routers import alerts, search, threads, agent
-
-# Load .env from the backend directory, then from cwd (so it works no matter how uvicorn is started)
-_env_path = Path(__file__).resolve().parent / ".env"
-load_dotenv(dotenv_path=_env_path)
-load_dotenv()  # fallback: .env in current working directory
+from routers import alerts, search, threads, agent, engage
 
 
 @asynccontextmanager
@@ -47,6 +47,7 @@ app.include_router(search.router, prefix="/search", tags=["search"])
 app.include_router(threads.router, prefix="/threads", tags=["threads"])
 app.include_router(alerts.router, prefix="/alerts", tags=["alerts"])
 app.include_router(agent.router, prefix="/agent", tags=["agent"])
+app.include_router(engage.router, prefix="/engage", tags=["engage"])
 
 
 @app.get("/health", response_model=HealthResponse)

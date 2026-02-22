@@ -90,7 +90,7 @@ def _get_openai():
         api_key = os.environ.get("OPENAI_API_KEY", "").strip()
         if not api_key:
             raise RuntimeError("OPENAI_API_KEY is not set — cannot use OpenAI backend.")
-        _openai_client = AsyncOpenAI(api_key=api_key)
+        _openai_client = AsyncOpenAI(api_key=api_key, max_retries=10)
     return _openai_client
 
 

@@ -8,6 +8,7 @@ from fastapi import APIRouter, HTTPException, Query
 
 import database
 from models import (
+    ActiveThreadsResponse,
     GrowthMomentumResponse,
     MentionsTrendResponse,
     SearchRequest,
@@ -85,5 +86,28 @@ async def growth_momentum(q: str = Query(..., description="Search query")) -> Gr
     _require_pool()
     try:
         return await posts_repo.get_growth_data(q)
+    except RuntimeError as exc:
+        raise HTTPException(status_code=503, detail=str(exc))
+
+
+@router.get("/active-threads", response_model=ActiveThreadsResponse)
+async def active_threads(
+    q: str = Query(..., description="Search query"),
+    window_hours: int = Query(default=24, ge=1, le=720, description="Activity window in hours"),
+    min_comments: int = Query(default=3, ge=1, description="Minimum comments within the window"),
+    limit: int = Query(default=20, ge=1, le=50),
+) -> ActiveThreadsResponse:
+    """
+    Semantically relevant posts with recent comment velocity.
+    'Active' = at least min_comments posted in the window_hours before the thread's last activity.
+    """
+    _require_pool()
+    try:
+        return await posts_repo.get_active_threads(
+            query_text=q,
+            window_hours=window_hours,
+            min_comments=min_comments,
+            limit=limit,
+        )
     except RuntimeError as exc:
         raise HTTPException(status_code=503, detail=str(exc))

@@ -187,6 +187,100 @@ export async function runAgent(
   return res.json() as Promise<AgentResponse>;
 }
 
+// ---- Active threads (engagement campaign) ----
+
+export type ActiveThread = {
+  id: string;
+  title: string;
+  subreddit: string;
+  url: string | null;
+  last_comment_utc: string | null;
+  score: number;
+  num_comments: number;
+  recent_comments: number;
+  velocity: number;
+  estimated_impressions: number;
+};
+
+export type ActiveThreadsResponse = {
+  active_count: number;
+  total_estimated_impressions: number;
+  window_hours: number;
+  threads: ActiveThread[];
+};
+
+export async function getThreadsActivity(
+  postIds: string[],
+  windowHours = 24,
+): Promise<ActiveThreadsResponse | null> {
+  if (!postIds.length) return null;
+  const base = getApiBase();
+  const params = new URLSearchParams({
+    ids: postIds.join(","),
+    window_hours: String(windowHours),
+  });
+  const res = await fetch(`${base}/threads/activity?${params}`);
+  if (res.status === 503) return null;
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: res.statusText }));
+    throw new Error((err as { detail?: string }).detail ?? "Thread activity request failed");
+  }
+  return res.json() as Promise<ActiveThreadsResponse>;
+}
+
+export async function getActiveThreads(
+  query: string,
+  windowHours = 24,
+  minComments = 3,
+  limit = 20,
+): Promise<ActiveThreadsResponse | null> {
+  const base = getApiBase();
+  const params = new URLSearchParams({
+    q: query.trim(),
+    window_hours: String(windowHours),
+    min_comments: String(minComments),
+    limit: String(limit),
+  });
+  const res = await fetch(`${base}/search/active-threads?${params}`);
+  if (res.status === 503) return null; // DB not available — caller shows empty state
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: res.statusText }));
+    throw new Error((err as { detail?: string }).detail ?? "Active threads request failed");
+  }
+  return res.json() as Promise<ActiveThreadsResponse>;
+}
+
+export async function draftReply(
+  threadTitle: string,
+  threadSubreddit: string,
+  query: string,
+): Promise<string> {
+  // From the browser, use same-origin proxy to avoid CORS/network errors to backend
+  const url =
+    typeof window !== "undefined"
+      ? "/api/engage/draft-reply"
+      : `${getApiBase()}/engage/draft-reply`;
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ thread_title: threadTitle, thread_subreddit: threadSubreddit, query }),
+  });
+  const raw = await res.text();
+  let data: { draft?: string; detail?: string };
+  try {
+    data = raw ? (JSON.parse(raw) as { draft?: string; detail?: string }) : {};
+  } catch {
+    throw new Error(res.ok ? "Invalid response from server" : (raw?.slice(0, 200) || res.statusText));
+  }
+  if (!res.ok) {
+    throw new Error(data.detail ?? res.statusText ?? "Draft failed");
+  }
+  if (typeof data.draft !== "string") {
+    throw new Error("Invalid response: missing draft");
+  }
+  return data.draft;
+}
+
 /** Convert TopMatch items into RetrievalMatch format for the agent. */
 export function matchesToRetrieval(matches: TopMatch[]): RetrievalMatch[] {
   return matches.map((m) => ({

@@ -1969,3 +1969,263 @@
     font-size: 0.78rem;
   }
 }
+
+/* ── Engagement Campaign CTA ─────────────────────────────────────────────── */
+
+.engageCta {
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(209, 98, 36, 0.15);
+  text-align: center;
+}
+
+.engageCtaText {
+  margin: 0;
+  color: #a06040;
+  font-size: 0.84rem;
+}
+
+.engageLink {
+  color: #d04f00;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.engageLink:hover {
+  text-decoration: underline;
+}
+
+/* ── Engagement Campaign Page ────────────────────────────────────────────── */
+
+.engagePageSub {
+  margin: 0.3rem 0 2rem;
+  color: #995730;
+  font-size: 0.97rem;
+}
+
+.engageBlock {
+  margin-top: 2rem;
+  padding: 1.4rem 1.5rem;
+  background: rgba(255, 255, 255, 0.88);
+  border: 1.5px solid rgba(209, 98, 36, 0.2);
+  border-radius: 14px;
+}
+
+.engageBlockTitle {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #d04f00;
+  margin: 0 0 0.25rem;
+}
+
+.engageBlockSub {
+  margin: 0 0 1rem;
+  color: #7a3c18;
+  font-size: 0.88rem;
+}
+
+.engagePlaceholderCard {
+  padding: 1rem 1.25rem;
+  background: #fff7f0;
+  border: 1px dashed rgba(209, 98, 36, 0.35);
+  border-radius: 10px;
+}
+
+.engagePlaceholderLabel {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #c46030;
+  margin-bottom: 0.4rem;
+}
+
+.engagePlaceholderText {
+  margin: 0;
+  color: #7a3c18;
+  font-size: 0.88rem;
+}
+
+.engageComposer {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.engageComposerTabs {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.engageComposerTab {
+  padding: 0.35rem 0.9rem;
+  border-radius: 999px;
+  border: 1px solid rgba(209, 98, 36, 0.35);
+  font-size: 0.85rem;
+  color: #7a3c18;
+  cursor: pointer;
+}
+
+.engageComposerTabActive {
+  background: #d04f00;
+  color: #fff;
+  border-color: #d04f00;
+}
+
+.engageTextarea {
+  width: 100%;
+  padding: 0.75rem 0.9rem;
+  border: 1.5px solid rgba(209, 98, 36, 0.3);
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: 0.9rem;
+  color: #2b170e;
+  background: #fffaf7;
+  resize: vertical;
+  box-sizing: border-box;
+}
+
+.engageTextarea:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.engageComposerActions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.engagePostButton {
+  background: #d04f00;
+  color: #fff;
+  border: none;
+  border-radius: 999px;
+  padding: 0.55rem 1.2rem;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.engagePostButton:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.engagePostNote {
+  font-size: 0.8rem;
+  color: #a06040;
+}
+
+.engageStatRow {
+  display: flex;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.engageStat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.engageStatValue {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: #d04f00;
+}
+
+.engageStatLabel {
+  font-size: 0.8rem;
+  color: #7a3c18;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.engageThreadList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.engageThreadCard {
+  padding: 0.9rem 1rem;
+  background: #fffaf7;
+  border: 1px solid rgba(209, 98, 36, 0.2);
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.engageThreadHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.engageSubreddit {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #c46030;
+}
+
+.engageVelocityBadge {
+  font-size: 0.75rem;
+  color: #7a3c18;
+  background: #fff2e6;
+  border-radius: 999px;
+  padding: 0.15rem 0.55rem;
+}
+
+.engageThreadTitle {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #2b170e;
+  line-height: 1.35;
+}
+
+.engageThreadMeta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: 0.78rem;
+  color: #a06040;
+}
+
+.engageThreadLink {
+  color: #d04f00;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.engageThreadLink:hover {
+  text-decoration: underline;
+}
+
+.engageThreadCardSelected {
+  border-color: #d04f00;
+  background: #fff2e6;
+}
+
+.engageSelectButton {
+  padding: 0.25rem 0.7rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #d04f00;
+  background: transparent;
+  border: 1.5px solid #d04f00;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.engageSelectButton:hover {
+  background: #d04f00;
+  color: #fff;
+}
