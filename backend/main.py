@@ -18,7 +18,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from database import close_pool, get_pool, init_pool
 from models import DatabaseHealthResponse, HealthResponse
-from routers import alerts, search, threads, agent
+from routers import alerts, search, threads, agent, engage
 
 
 @asynccontextmanager
@@ -47,6 +47,7 @@ app.include_router(search.router, prefix="/search", tags=["search"])
 app.include_router(threads.router, prefix="/threads", tags=["threads"])
 app.include_router(alerts.router, prefix="/alerts", tags=["alerts"])
 app.include_router(agent.router, prefix="/agent", tags=["agent"])
+app.include_router(engage.router, prefix="/engage", tags=["engage"])
 
 
 @app.get("/health", response_model=HealthResponse)
