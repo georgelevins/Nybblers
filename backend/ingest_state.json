@@ -1,14 +1,14 @@
 {
-  "round": 48,
-  "subreddit_index": 4,
+  "round": 209,
+  "subreddit_index": 8,
   "offsets": {
-    "Entrepreneur": 24000,
+    "Entrepreneur": 104000,
     "SaaS": 12500,
-    "startups": 24000,
-    "smallbusiness": 24000,
-    "indiehackers": 23500,
-    "digitalnomad": 23500,
-    "freelance": 23500,
-    "freelanceWriters": 23000
+    "startups": 104000,
+    "smallbusiness": 104000,
+    "indiehackers": 39976,
+    "digitalnomad": 98329,
+    "freelance": 80264,
+    "freelanceWriters": 31983
   }
 }
