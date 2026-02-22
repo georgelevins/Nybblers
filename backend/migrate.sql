@@ -102,6 +102,14 @@ CREATE INDEX IF NOT EXISTS posts_activity_ratio_idx ON posts (activity_ratio DES
 CREATE INDEX IF NOT EXISTS comments_post_id_idx ON comments (post_id);
 CREATE INDEX IF NOT EXISTS comments_created_utc_idx ON comments (created_utc);
 
+-- Partial index speeds up active-threads queries that filter WHERE last_comment_utc IS NOT NULL
+CREATE INDEX IF NOT EXISTS posts_last_comment_utc_idx
+    ON posts (last_comment_utc)
+    WHERE last_comment_utc IS NOT NULL;
+
+-- Composite index speeds up the comments JOIN in active-threads (filter by post_id + date range)
+CREATE INDEX IF NOT EXISTS comments_post_created_idx ON comments (post_id, created_utc);
+
 -- ── Rebuild reconstructed_text for any posts that are missing it ──────────────
 -- This is a one-time fix; safe to re-run.
 

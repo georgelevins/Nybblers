@@ -159,6 +159,32 @@ export async function getGrowthMomentum(query: string): Promise<GrowthData> {
   return res.json() as Promise<GrowthData>;
 }
 
+// ---- Combined analytics (single request, single embed) ----
+
+export type AnalyticsData = {
+  mentions: { points: TimePoint[] };
+  subreddits: { subreddits: Record<string, string[]> };
+  top_matches: { matches: TopMatch[] };
+  growth: GrowthData;
+};
+
+export async function getAllAnalytics(
+  query: string,
+  topMatchesLimit = 10,
+): Promise<AnalyticsData> {
+  const base = getApiBase();
+  const params = new URLSearchParams({
+    q: query.trim(),
+    top_matches_limit: String(topMatchesLimit),
+  });
+  const res = await fetch(`${base}/search/analytics?${params}`);
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: res.statusText }));
+    throw new Error((err as { detail?: string }).detail ?? "Analytics request failed");
+  }
+  return res.json() as Promise<AnalyticsData>;
+}
+
 // ---- Agent API ----
 
 export async function runAgent(

@@ -1,10 +1,7 @@
 import ResultsWorkspace from "../components/results/ResultsWorkspace";
 import styles from "../redditdemand.module.css";
 import {
-  getMentionsTrend,
-  getUsersBySubreddit,
-  getTopMatches,
-  getGrowthMomentum,
+  getAllAnalytics,
   type TimePoint,
   type TopMatch,
   type GrowthData,
@@ -17,30 +14,6 @@ function firstParam(value: string | string[] | undefined): string {
   return value ?? "";
 }
 
-async function fetchAnalytics(query: string): Promise<{
-  points: TimePoint[];
-  subreddits: Record<string, string[]>;
-  topMatches: TopMatch[];
-  growthData: GrowthData;
-}> {
-  const [points, subreddits, topMatches, growthData] = await Promise.allSettled([
-    getMentionsTrend(query),
-    getUsersBySubreddit(query),
-    getTopMatches(query, 10),
-    getGrowthMomentum(query),
-  ]);
-
-  return {
-    points: points.status === "fulfilled" ? points.value : [],
-    subreddits: subreddits.status === "fulfilled" ? subreddits.value : {},
-    topMatches: topMatches.status === "fulfilled" ? topMatches.value : [],
-    growthData:
-      growthData.status === "fulfilled"
-        ? growthData.value
-        : { weekly: [], monthly: [] },
-  };
-}
-
 export default async function ResultsPage({
   searchParams,
 }: {
@@ -49,7 +22,20 @@ export default async function ResultsPage({
   const params = await searchParams;
   const query = firstParam(params.q).trim() || "micro saas ideas";
 
-  const { points, subreddits, topMatches, growthData } = await fetchAnalytics(query);
+  let points: TimePoint[] = [];
+  let subreddits: Record<string, string[]> = {};
+  let topMatches: TopMatch[] = [];
+  let growthData: GrowthData = { weekly: [], monthly: [] };
+
+  try {
+    const analytics = await getAllAnalytics(query, 10);
+    points = analytics.mentions.points;
+    subreddits = analytics.subreddits.subreddits;
+    topMatches = analytics.top_matches.matches;
+    growthData = analytics.growth;
+  } catch {
+    // Partial failures are handled by showing empty states in the workspace
+  }
 
   return (
     <main className={styles.page}>

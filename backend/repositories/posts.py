@@ -3,6 +3,7 @@ Post repository — real asyncpg + pgvector queries.
 All functions embed the query text via OpenAI before searching.
 """
 
+import asyncio
 from datetime import datetime
 
 from database import get_pool
@@ -30,9 +31,11 @@ async def search_posts(
     query_text: str,
     subreddit: str | None = None,
     limit: int = 20,
+    embedding: list[float] | None = None,
 ) -> SearchResponse:
     """Embed query, run pgvector cosine similarity search on posts, return SearchResponse."""
-    embedding = await embed_text(query_text)
+    if embedding is None:
+        embedding = await embed_text(query_text)
     pool = await get_pool()
 
     base_sql = """
@@ -81,12 +84,14 @@ async def search_posts(
 async def get_top_matches(
     query_text: str,
     limit: int = 10,
+    embedding: list[float] | None = None,
 ) -> TopMatchesResponse:
     """
     Return the most semantically similar posts and comments combined.
     Posts come from `posts` table; comments from `comments` JOIN `comment_embeddings`.
     """
-    embedding = await embed_text(query_text)
+    if embedding is None:
+        embedding = await embed_text(query_text)
     vec = to_pg_vector(embedding)
     pool = await get_pool()
 
@@ -127,9 +132,18 @@ async def get_top_matches(
         LIMIT $3
     """
 
-    async with pool.acquire() as conn:
-        post_rows = await conn.fetch(post_sql, vec, SIMILARITY_THRESHOLD, limit)
-        comment_rows = await conn.fetch(comment_sql, vec, SIMILARITY_THRESHOLD, limit)
+    async def _fetch_posts(v, thresh, lim):
+        async with pool.acquire() as conn:
+            return await conn.fetch(post_sql, v, thresh, lim)
+
+    async def _fetch_comments(v, thresh, lim):
+        async with pool.acquire() as conn:
+            return await conn.fetch(comment_sql, v, thresh, lim)
+
+    post_rows, comment_rows = await asyncio.gather(
+        _fetch_posts(vec, SIMILARITY_THRESHOLD, limit),
+        _fetch_comments(vec, SIMILARITY_THRESHOLD, limit),
+    )
 
     combined: list[TopMatch] = []
     for row in post_rows:
@@ -164,12 +178,16 @@ async def get_top_matches(
     return TopMatchesResponse(matches=combined[:limit])
 
 
-async def get_mentions_over_time(query_text: str) -> MentionsTrendResponse:
+async def get_mentions_over_time(
+    query_text: str,
+    embedding: list[float] | None = None,
+) -> MentionsTrendResponse:
     """
     Monthly count of posts semantically similar to the query.
     Returns a time series sorted oldest-first.
     """
-    embedding = await embed_text(query_text)
+    if embedding is None:
+        embedding = await embed_text(query_text)
     vec = to_pg_vector(embedding)
     pool = await get_pool()
 
@@ -201,12 +219,14 @@ async def get_mentions_over_time(query_text: str) -> MentionsTrendResponse:
 async def get_users_by_subreddit(
     query_text: str,
     limit: int = 50,
+    embedding: list[float] | None = None,
 ) -> SubredditUsersResponse:
     """
     Unique authors per subreddit from posts similar to the query.
     Returns { subreddit: [username, ...] }.
     """
-    embedding = await embed_text(query_text)
+    if embedding is None:
+        embedding = await embed_text(query_text)
     vec = to_pg_vector(embedding)
     pool = await get_pool()
 
@@ -237,11 +257,15 @@ async def get_users_by_subreddit(
     return SubredditUsersResponse(subreddits=subreddits)
 
 
-async def get_growth_data(query_text: str) -> GrowthMomentumResponse:
+async def get_growth_data(
+    query_text: str,
+    embedding: list[float] | None = None,
+) -> GrowthMomentumResponse:
     """
     Weekly and monthly time series of post counts similar to the query.
     """
-    embedding = await embed_text(query_text)
+    if embedding is None:
+        embedding = await embed_text(query_text)
     vec = to_pg_vector(embedding)
     pool = await get_pool()
 
@@ -267,9 +291,18 @@ async def get_growth_data(query_text: str) -> GrowthMomentumResponse:
         ORDER BY period
     """
 
-    async with pool.acquire() as conn:
-        monthly_rows = await conn.fetch(monthly_sql, vec, SIMILARITY_THRESHOLD)
-        weekly_rows = await conn.fetch(weekly_sql, vec, SIMILARITY_THRESHOLD)
+    async def _fetch_monthly(v, thresh):
+        async with pool.acquire() as conn:
+            return await conn.fetch(monthly_sql, v, thresh)
+
+    async def _fetch_weekly(v, thresh):
+        async with pool.acquire() as conn:
+            return await conn.fetch(weekly_sql, v, thresh)
+
+    monthly_rows, weekly_rows = await asyncio.gather(
+        _fetch_monthly(vec, SIMILARITY_THRESHOLD),
+        _fetch_weekly(vec, SIMILARITY_THRESHOLD),
+    )
 
     monthly = [
         TimePoint(
@@ -421,6 +454,7 @@ async def get_active_threads(
     window_hours: int = 24,
     min_comments: int = 3,
     limit: int = 20,
+    embedding: list[float] | None = None,
 ) -> ActiveThreadsResponse:
     """
     Return semantically relevant posts that had recent comment activity.
@@ -432,7 +466,8 @@ async def get_active_threads(
 
     Velocity = recent_comments / window_hours — higher means faster discussion.
     """
-    embedding = await embed_text(query_text)
+    if embedding is None:
+        embedding = await embed_text(query_text)
     vec = to_pg_vector(embedding)
     pool = await get_pool()
 

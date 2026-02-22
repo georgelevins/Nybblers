@@ -79,3 +79,11 @@ CREATE INDEX IF NOT EXISTS posts_created_utc_idx ON posts (created_utc);
 CREATE INDEX IF NOT EXISTS posts_activity_ratio_idx ON posts (activity_ratio DESC NULLS LAST);
 CREATE INDEX IF NOT EXISTS comments_post_id_idx ON comments (post_id);
 CREATE INDEX IF NOT EXISTS comments_created_utc_idx ON comments (created_utc);
+
+-- Partial index for active-threads filter on last_comment_utc IS NOT NULL
+CREATE INDEX IF NOT EXISTS posts_last_comment_utc_idx
+    ON posts (last_comment_utc)
+    WHERE last_comment_utc IS NOT NULL;
+
+-- Composite index for the active-threads JOIN (post_id + date range on comments)
+CREATE INDEX IF NOT EXISTS comments_post_created_idx ON comments (post_id, created_utc);

@@ -29,6 +29,7 @@ don't change it mid-way through (mixing dims breaks search).
 
 import asyncio
 import os
+from collections import OrderedDict
 
 # ── Backend detection ─────────────────────────────────────────────────────────
 
@@ -101,12 +102,36 @@ async def _encode_openai(texts: list[str]) -> list[list[float]]:
     return [item.embedding for item in sorted(resp.data, key=lambda x: x.index)]
 
 
+# ── Embedding cache ───────────────────────────────────────────────────────────
+# Keyed by normalised text; evicts oldest entries once the limit is reached.
+_EMBED_CACHE_SIZE = 512
+_embed_cache: OrderedDict[str, list[float]] = OrderedDict()
+
+
+def _cache_get(key: str) -> list[float] | None:
+    if key in _embed_cache:
+        _embed_cache.move_to_end(key)
+        return _embed_cache[key]
+    return None
+
+
+def _cache_set(key: str, value: list[float]) -> None:
+    _embed_cache[key] = value
+    _embed_cache.move_to_end(key)
+    if len(_embed_cache) > _EMBED_CACHE_SIZE:
+        _embed_cache.popitem(last=False)
+
+
 # ── Public API ────────────────────────────────────────────────────────────────
 
 
 async def embed_text(text: str) -> list[float]:
-    """Embed a single string and return a float vector."""
-    results = await embed_texts([text.strip()])
+    """Embed a single string and return a float vector. Results are cached."""
+    key = text.strip()[:_MAX_CHARS]
+    cached = _cache_get(key)
+    if cached is not None:
+        return cached
+    results = await embed_texts([key])
     return results[0]
 
 
@@ -115,13 +140,37 @@ async def embed_texts(texts: list[str]) -> list[list[float]]:
     Embed a list of strings in one shot and return a list of float vectors
     in the same order.  Prefer this over looping embed_text() — the local
     backend batches internally for much better throughput.
+
+    Already-cached texts are skipped; only novel texts hit the model/API.
     """
     if not texts:
         return []
     cleaned = [t.strip()[:_MAX_CHARS] for t in texts]
-    if _BACKEND == "local":
-        return await asyncio.to_thread(_encode_local, cleaned)
-    return await _encode_openai(cleaned)
+
+    # Resolve which texts need actual embedding work
+    results: list[list[float] | None] = [None] * len(cleaned)
+    uncached_indices: list[int] = []
+    uncached_texts: list[str] = []
+
+    for i, key in enumerate(cleaned):
+        hit = _cache_get(key)
+        if hit is not None:
+            results[i] = hit
+        else:
+            uncached_indices.append(i)
+            uncached_texts.append(key)
+
+    if uncached_texts:
+        if _BACKEND == "local":
+            new_vecs = await asyncio.to_thread(_encode_local, uncached_texts)
+        else:
+            new_vecs = await _encode_openai(uncached_texts)
+
+        for idx, key, vec in zip(uncached_indices, uncached_texts, new_vecs):
+            _cache_set(key, vec)
+            results[idx] = vec
+
+    return results  # type: ignore[return-value]
 
 
 def to_pg_vector(embedding: list[float]) -> str:

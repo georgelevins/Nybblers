@@ -164,6 +164,16 @@ class ActiveThreadsResponse(BaseModel):
     threads: list[ActiveThread]
 
 
+# --- Combined analytics (single-request, single-embed) ---
+
+
+class AnalyticsResponse(BaseModel):
+    mentions: MentionsTrendResponse
+    subreddits: SubredditUsersResponse
+    top_matches: TopMatchesResponse
+    growth: GrowthMomentumResponse
+
+
 # --- Health ---
 
 
