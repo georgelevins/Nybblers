@@ -12,8 +12,9 @@ from anthropic import Anthropic
 
 
 # Contract constants
-# Use -latest alias; snapshot claude-3-5-sonnet-20241022 was deprecated (404)
-DEFAULT_MODEL = "claude-3-5-sonnet-latest"
+# Claude 3.5 Sonnet was deprecated; use current Sonnet 4.6 (see docs.anthropic.com/models-overview)
+# Override with ANTHROPIC_MODEL in .env if needed (e.g. claude-sonnet-4-5, claude-sonnet-4-0)
+DEFAULT_MODEL = os.environ.get("ANTHROPIC_MODEL", "claude-sonnet-4-6")
 MAX_OUTPUT_TOKENS = 4096
 TEMPERATURE = 0.2  # Low for consistent, deterministic outputs
 
