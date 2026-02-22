@@ -1,6 +1,6 @@
 import Link from "next/link";
 import styles from "../redditdemand.module.css";
-import { getThreadsActivity, getActiveThreads, type ActiveThread } from "../lib/api";
+import { getActiveThreads, type ActiveThread } from "../lib/api";
 
 type SearchParamsInput = Record<string, string | string[] | undefined>;
 
@@ -47,14 +47,8 @@ export default async function EngagePage({
 }) {
   const params = await searchParams;
   const query = firstParam(params.q).trim() || "your topic";
-  const idsParam = firstParam(params.ids).trim();
-  const postIds = idsParam ? idsParam.split(",").filter(Boolean) : [];
 
-  // If IDs were passed from the results page, fetch activity for exactly those posts.
-  // Otherwise (no DB / no matches on results page) fall back to the mock-backed endpoint.
-  const data = postIds.length
-    ? await getThreadsActivity(postIds, 24).catch(() => null)
-    : await getActiveThreads(query, 24, 3, 20).catch(() => null);
+  const data = await getActiveThreads(query, 24, 3, 20).catch(() => null);
 
   const hasData = data !== null && data.active_count > 0;
   const noDb = data === null;
@@ -133,7 +127,7 @@ export default async function EngagePage({
             </div>
           )}
 
-          {hasData && (
+          {data !== null && data.active_count > 0 && (
             <div className={styles.engageThreadList}>
               {data.threads.map((thread) => (
                 <ThreadCard key={thread.id} thread={thread} />

@@ -252,22 +252,14 @@ export default function ResultsWorkspace({
           </Link>
         </div>
 
-        {(() => {
-          const postIds = (topMatches.length > 0 ? topMatches : FALLBACK_MATCHES)
-            .filter((m) => m.kind === "post")
-            .map((m) => m.id);
-          const engageHref = `/engage?q=${encodeURIComponent(query)}${postIds.length ? `&ids=${postIds.join(",")}` : ""}`;
-          return (
-            <div className={styles.engageCta}>
-              <p className={styles.engageCtaText}>
-                Some of these posts may still be active.{" "}
-                <a href={engageHref} className={styles.engageLink}>
-                  Run an engagement campaign →
-                </a>
-              </p>
-            </div>
-          );
-        })()}
+        <div className={styles.engageCta}>
+          <p className={styles.engageCtaText}>
+            Some of these posts may still be active.{" "}
+            <a href={`/engage?q=${encodeURIComponent(query)}`} className={styles.engageLink}>
+              Run an engagement campaign →
+            </a>
+          </p>
+        </div>
 
         <div className={styles.resultsPanelsViewport}>
           <div className={styles.resultsPanelsGrid}>

@@ -3,7 +3,7 @@ Post repository — real asyncpg + pgvector queries.
 All functions embed the query text via OpenAI before searching.
 """
 
-from datetime import datetime, timedelta, timezone
+from datetime import datetime
 
 from database import get_pool
 from models import (
@@ -362,7 +362,6 @@ async def get_threads_activity(
         return ActiveThreadsResponse(active_count=0, total_estimated_impressions=0, window_hours=window_hours, threads=[])
 
     pool = await get_pool()
-    window = timedelta(hours=window_hours)
 
     sql = """
         WITH active AS (
@@ -375,7 +374,7 @@ async def get_threads_activity(
                 COALESCE(p.score, 0)        AS score,
                 COALESCE(p.num_comments, 0) AS num_comments,
                 COUNT(c.id) FILTER (
-                    WHERE c.created_utc >= p.last_comment_utc - $2
+                    WHERE c.created_utc >= p.last_comment_utc - ($2 * INTERVAL '1 hour')
                 ) AS recent_comments
             FROM posts p
             LEFT JOIN comments c ON c.post_id = p.id
@@ -384,13 +383,13 @@ async def get_threads_activity(
             GROUP BY p.id, p.title, p.subreddit, p.url,
                      p.last_comment_utc, p.score, p.num_comments
         )
-        SELECT *, recent_comments::float / GREATEST(1, $3) AS velocity
+        SELECT *, recent_comments::float / GREATEST(1, $2) AS velocity
         FROM active
         ORDER BY velocity DESC
     """
 
     async with pool.acquire() as conn:
-        rows = await conn.fetch(sql, post_ids, window, float(window_hours))
+        rows = await conn.fetch(sql, post_ids, float(window_hours))
 
     threads = [
         ActiveThread(
@@ -436,7 +435,6 @@ async def get_active_threads(
     embedding = await embed_text(query_text)
     vec = to_pg_vector(embedding)
     pool = await get_pool()
-    window = timedelta(hours=window_hours)
 
     sql = """
         WITH active AS (
@@ -449,7 +447,7 @@ async def get_active_threads(
                 COALESCE(p.score, 0)        AS score,
                 COALESCE(p.num_comments, 0) AS num_comments,
                 COUNT(c.id) FILTER (
-                    WHERE c.created_utc >= p.last_comment_utc - $3
+                    WHERE c.created_utc >= p.last_comment_utc - ($3 * INTERVAL '1 hour')
                 ) AS recent_comments
             FROM posts p
             JOIN comments c ON c.post_id = p.id
@@ -459,19 +457,19 @@ async def get_active_threads(
             GROUP BY p.id, p.title, p.subreddit, p.url,
                      p.last_comment_utc, p.score, p.num_comments
             HAVING COUNT(c.id) FILTER (
-                WHERE c.created_utc >= p.last_comment_utc - $3
+                WHERE c.created_utc >= p.last_comment_utc - ($3 * INTERVAL '1 hour')
             ) >= $4
         )
         SELECT
             *,
-            recent_comments::float / GREATEST(1, $5) AS velocity
+            recent_comments::float / GREATEST(1, $3) AS velocity
         FROM active
         ORDER BY velocity DESC
-        LIMIT $6
+        LIMIT $5
     """
 
     async with pool.acquire() as conn:
-        rows = await conn.fetch(sql, vec, SIMILARITY_THRESHOLD, window, min_comments, float(window_hours), limit)
+        rows = await conn.fetch(sql, vec, SIMILARITY_THRESHOLD, float(window_hours), min_comments, limit)
 
     threads = [
         ActiveThread(
