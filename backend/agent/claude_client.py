@@ -12,7 +12,8 @@ from anthropic import Anthropic
 
 
 # Contract constants
-DEFAULT_MODEL = "claude-3-5-sonnet-20241022"
+# Use -latest alias; snapshot claude-3-5-sonnet-20241022 was deprecated (404)
+DEFAULT_MODEL = "claude-3-5-sonnet-latest"
 MAX_OUTPUT_TOKENS = 4096
 TEMPERATURE = 0.2  # Low for consistent, deterministic outputs
 
