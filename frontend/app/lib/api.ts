@@ -240,11 +240,11 @@ export async function getActiveThreads(
     min_comments: String(minComments),
     limit: String(limit),
   });
-  // Use same-origin proxy so server (SSR) and client can reach backend via Next API route
+  // Client: use same-origin proxy. Server (SSR): call backend directly so deploy works with only NEXT_PUBLIC_API_URL (same as results page).
   const url =
     typeof window !== "undefined"
       ? `/api/engage/active-threads?${params}`
-      : `${(process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000").replace(/\/$/, "")}/api/engage/active-threads?${params}`;
+      : `${getApiBase()}/search/active-threads?${params}`;
   const res = await fetch(url);
   if (res.status === 503) return null; // DB not available — caller shows empty state
   if (!res.ok) {
