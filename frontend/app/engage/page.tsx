@@ -1,43 +1,13 @@
 import Link from "next/link";
 import styles from "../redditdemand.module.css";
-import { getActiveThreads, type ActiveThread } from "../lib/api";
+import { getActiveThreads } from "../lib/api";
+import ReplyComposer from "../components/engage/ReplyComposer";
 
 type SearchParamsInput = Record<string, string | string[] | undefined>;
 
 function firstParam(value: string | string[] | undefined): string {
   if (Array.isArray(value)) return value[0] ?? "";
   return value ?? "";
-}
-
-function formatVelocity(v: number): string {
-  if (v >= 1) return `${v.toFixed(1)}/hr`;
-  return `${(v * 60).toFixed(0)}/min`;
-}
-
-function ThreadCard({ thread }: { thread: ActiveThread }) {
-  const redditUrl = thread.url ?? `https://reddit.com/r/${thread.subreddit}/`;
-  return (
-    <article className={styles.engageThreadCard}>
-      <div className={styles.engageThreadHead}>
-        <span className={styles.engageSubreddit}>r/{thread.subreddit}</span>
-        <span className={styles.engageVelocityBadge}>
-          {thread.recent_comments} comments · {formatVelocity(thread.velocity)}
-        </span>
-      </div>
-      <p className={styles.engageThreadTitle}>{thread.title}</p>
-      <div className={styles.engageThreadMeta}>
-        <span>~{thread.estimated_impressions.toLocaleString()} est. impressions</span>
-        <a
-          href={redditUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className={styles.engageThreadLink}
-        >
-          View on Reddit →
-        </a>
-      </div>
-    </article>
-  );
 }
 
 export default async function EngagePage({
@@ -58,7 +28,7 @@ export default async function EngagePage({
       <header className={styles.topBar}>
         <div className={styles.topBarInner}>
           <Link
-            href={`/results?q=${encodeURIComponent(query)}&screen=trend`}
+            href={`/results?q=${encodeURIComponent(query)}`}
             className={styles.topHomeButton}
           >
             ← Back to Results
@@ -72,7 +42,7 @@ export default async function EngagePage({
           Reply to active threads and reach people already discussing this topic.
         </p>
 
-        {/* Impression Estimate */}
+        {/* Estimated Reach */}
         <div className={styles.engageBlock}>
           <h2 className={styles.engageBlockTitle}>Estimated Reach</h2>
           <div className={styles.engageStatRow}>
@@ -102,18 +72,19 @@ export default async function EngagePage({
           )}
         </div>
 
-        {/* Active Threads */}
+        {/* Active Threads + Reply Composer */}
         <div className={styles.engageBlock}>
           <h2 className={styles.engageBlockTitle}>Active Threads</h2>
           <p className={styles.engageBlockSub}>
             Posts about <strong>{query}</strong> with recent comment activity — ranked by velocity.
+            Select one to compose a reply.
           </p>
 
           {noDb && (
             <div className={styles.engagePlaceholderCard}>
               <span className={styles.engagePlaceholderLabel}>No database connected</span>
               <p className={styles.engagePlaceholderText}>
-                Set <code>DATABASE_URL</code> and ingest the ZST data to see active threads.
+                Set <code>DATABASE_URL</code> and ingest data to see active threads.
               </p>
             </div>
           )}
@@ -127,49 +98,36 @@ export default async function EngagePage({
             </div>
           )}
 
-          {data !== null && data.active_count > 0 && (
-            <div className={styles.engageThreadList}>
-              {data.threads.map((thread) => (
-                <ThreadCard key={thread.id} thread={thread} />
-              ))}
-            </div>
+          {hasData && (
+            <ReplyComposer threads={data.threads} query={query} />
           )}
         </div>
 
-        {/* Reply Composer */}
-        <div className={styles.engageBlock}>
-          <h2 className={styles.engageBlockTitle}>Reply Composer</h2>
-          <p className={styles.engageBlockSub}>
-            Select a thread above, then draft your reply — or let AI write one for you.
-          </p>
-
-          <div className={styles.engageComposer}>
-            <div className={styles.engageComposerTabs}>
-              <span className={`${styles.engageComposerTab} ${styles.engageComposerTabActive}`}>
-                AI Draft
-              </span>
-              <span className={styles.engageComposerTab}>Write my own</span>
-            </div>
-            <textarea
-              className={styles.engageTextarea}
-              rows={5}
-              placeholder={
-                hasData
-                  ? "Select a thread above to generate an AI-drafted reply…"
-                  : "No active threads to reply to yet."
-              }
-              disabled
-            />
-            <div className={styles.engageComposerActions}>
-              <button className={styles.engagePostButton} disabled>
-                Post Reply
-              </button>
-              <span className={styles.engagePostNote}>
-                Reddit API integration coming soon
-              </span>
+        {/* Reply Composer heading (shown when no data) */}
+        {!hasData && (
+          <div className={styles.engageBlock}>
+            <h2 className={styles.engageBlockTitle}>Reply Composer</h2>
+            <p className={styles.engageBlockSub}>
+              Active threads will appear above once connected to the database.
+            </p>
+            <div className={styles.engageComposer}>
+              <textarea
+                className={styles.engageTextarea}
+                rows={5}
+                placeholder="No active threads to reply to yet."
+                disabled
+              />
+              <div className={styles.engageComposerActions}>
+                <button className={styles.engagePostButton} disabled>
+                  Copy Reply
+                </button>
+                <span className={styles.engagePostNote}>
+                  Reddit API posting coming soon
+                </span>
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </section>
     </main>
   );

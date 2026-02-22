@@ -2039,3 +2039,25 @@
 .engageThreadLink:hover {
   text-decoration: underline;
 }
+
+.engageThreadCardSelected {
+  border-color: #d04f00;
+  background: #fff2e6;
+}
+
+.engageSelectButton {
+  padding: 0.25rem 0.7rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #d04f00;
+  background: transparent;
+  border: 1.5px solid #d04f00;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.engageSelectButton:hover {
+  background: #d04f00;
+  color: #fff;
+}
