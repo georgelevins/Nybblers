@@ -1195,12 +1195,24 @@
   margin-top: 0.85rem;
   height: calc(100vh - 130px);
   min-height: 0;
-  overflow: hidden;
+  overflow-y: auto;
   padding-right: 0.2rem;
   position: relative;
 }
 
+.resultsPanelsTopGrid {
+  height: 100%;
+  min-height: 100%;
+}
+
+.resultsPanelsExtra {
+  margin-top: 0.8rem;
+  display: grid;
+  gap: 0.8rem;
+}
+
 .resultsPanelsGrid {
+  min-height: 100%;
   height: 100%;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1480,6 +1492,102 @@
 
 .resultsDataCardExpanded .chartShell {
   min-height: 260px;
+}
+
+.resultsDataCardWide {
+  min-height: 280px;
+  height: auto;
+}
+
+.resultsUsersBySubredditList {
+  margin-top: 0.7rem;
+  min-height: 0;
+  flex: 1;
+  overflow-y: auto;
+  display: grid;
+  gap: 0.6rem;
+}
+
+.resultsUsersGroup {
+  border: 1px solid rgba(209, 98, 36, 0.14);
+  border-radius: 10px;
+  background: rgba(255, 250, 245, 0.9);
+  padding: 0.55rem 0.6rem;
+}
+
+.resultsUsersGroupTitle {
+  margin: 0;
+  color: #6f3b20;
+  font-size: 0.84rem;
+}
+
+.resultsUsersGroupTitle span {
+  color: #9a5d3b;
+  font-size: 0.76rem;
+  font-weight: 500;
+}
+
+.resultsUsersChips {
+  margin-top: 0.45rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.resultsUsersChip {
+  border-radius: 999px;
+  border: 1px solid rgba(209, 98, 36, 0.2);
+  background: rgba(255, 255, 255, 0.9);
+  padding: 0.2rem 0.5rem;
+  font-size: 0.74rem;
+  color: #8a5132;
+}
+
+.resultsZipButton {
+  margin-top: 0.7rem;
+  border: none;
+  border-radius: 10px;
+  background: linear-gradient(140deg, #ff8736, #e35900);
+  color: #fff;
+  font-size: 0.82rem;
+  font-weight: 600;
+  padding: 0.58rem 0.82rem;
+  cursor: pointer;
+  align-self: flex-start;
+}
+
+.resultsZipButton:hover {
+  filter: brightness(0.96);
+}
+
+.saturationLegend {
+  margin-top: 0.7rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem 0.85rem;
+}
+
+.saturationLegendItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: #8f5435;
+  font-size: 0.76rem;
+}
+
+.saturationLegendDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  display: inline-block;
+}
+
+.saturationLegendDotNeed {
+  background: #e35900;
+}
+
+.saturationLegendDotTools {
+  background: #8f5a3a;
 }
 
 .feedbackItem {
@@ -1957,6 +2065,10 @@
     right: 0.65rem;
     bottom: 0.65rem;
     min-height: 0;
+  }
+
+  .resultsDataCardWide {
+    grid-column: auto;
   }
 
   .readinessLayout {
