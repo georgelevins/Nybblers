@@ -108,7 +108,7 @@ export default async function EngagePage({
           <div className={styles.engageBlock}>
             <h2 className={styles.engageBlockTitle}>Reply Composer</h2>
             <p className={styles.engageBlockSub}>
-              Active threads will appear above once connected to the database.
+              There are no active threads at the moment. Try a different search or check back later.
             </p>
             <div className={styles.engageComposer}>
               <textarea
@@ -121,9 +121,6 @@ export default async function EngagePage({
                 <button className={styles.engagePostButton} disabled>
                   Copy Reply
                 </button>
-                <span className={styles.engagePostNote}>
-                  Reddit API posting coming soon
-                </span>
               </div>
             </div>
           </div>
