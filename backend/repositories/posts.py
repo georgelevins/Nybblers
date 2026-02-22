@@ -349,6 +349,74 @@ async def get_thread(thread_id: str) -> ThreadDetail | None:
     )
 
 
+async def get_threads_activity(
+    post_ids: list[str],
+    window_hours: int = 24,
+) -> ActiveThreadsResponse:
+    """
+    Return activity data for a specific set of post IDs.
+    Used by the engage page to show the same threads as the results page,
+    enriched with recent comment velocity.
+    """
+    if not post_ids:
+        return ActiveThreadsResponse(active_count=0, total_estimated_impressions=0, window_hours=window_hours, threads=[])
+
+    pool = await get_pool()
+    window = timedelta(hours=window_hours)
+
+    sql = """
+        WITH active AS (
+            SELECT
+                p.id,
+                p.title,
+                p.subreddit,
+                p.url,
+                p.last_comment_utc,
+                COALESCE(p.score, 0)        AS score,
+                COALESCE(p.num_comments, 0) AS num_comments,
+                COUNT(c.id) FILTER (
+                    WHERE c.created_utc >= p.last_comment_utc - $2
+                ) AS recent_comments
+            FROM posts p
+            LEFT JOIN comments c ON c.post_id = p.id
+            WHERE p.id = ANY($1)
+              AND p.last_comment_utc IS NOT NULL
+            GROUP BY p.id, p.title, p.subreddit, p.url,
+                     p.last_comment_utc, p.score, p.num_comments
+        )
+        SELECT *, recent_comments::float / GREATEST(1, $3) AS velocity
+        FROM active
+        ORDER BY velocity DESC
+    """
+
+    async with pool.acquire() as conn:
+        rows = await conn.fetch(sql, post_ids, window, float(window_hours))
+
+    threads = [
+        ActiveThread(
+            id=r["id"],
+            title=r["title"],
+            subreddit=r["subreddit"],
+            url=r["url"],
+            last_comment_utc=r["last_comment_utc"],
+            score=r["score"],
+            num_comments=r["num_comments"],
+            recent_comments=int(r["recent_comments"]),
+            velocity=float(r["velocity"]),
+            estimated_impressions=r["score"] * 4 + r["num_comments"] * 100,
+        )
+        for r in rows
+    ]
+
+    total_impressions = sum(t.estimated_impressions for t in threads)
+    return ActiveThreadsResponse(
+        active_count=len(threads),
+        total_estimated_impressions=total_impressions,
+        window_hours=window_hours,
+        threads=threads,
+    )
+
+
 async def get_active_threads(
     query_text: str,
     window_hours: int = 24,

@@ -209,6 +209,25 @@ export type ActiveThreadsResponse = {
   threads: ActiveThread[];
 };
 
+export async function getThreadsActivity(
+  postIds: string[],
+  windowHours = 24,
+): Promise<ActiveThreadsResponse | null> {
+  if (!postIds.length) return null;
+  const base = getApiBase();
+  const params = new URLSearchParams({
+    ids: postIds.join(","),
+    window_hours: String(windowHours),
+  });
+  const res = await fetch(`${base}/threads/activity?${params}`);
+  if (res.status === 503) return null;
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: res.statusText }));
+    throw new Error((err as { detail?: string }).detail ?? "Thread activity request failed");
+  }
+  return res.json() as Promise<ActiveThreadsResponse>;
+}
+
 export async function getActiveThreads(
   query: string,
   windowHours = 24,

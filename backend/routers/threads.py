@@ -2,11 +2,11 @@
 Threads router — post detail and opportunities.
 """
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query
 
 import database
 from database import get_pool
-from models import OpportunitiesResponse, OpportunityPost, ThreadDetail
+from models import ActiveThreadsResponse, OpportunitiesResponse, OpportunityPost, ThreadDetail
 from repositories import posts as posts_repo
 
 router = APIRouter()
@@ -73,6 +73,22 @@ async def get_opportunities(
         for r in rows
     ]
     return OpportunitiesResponse(results=results)
+
+
+@router.get("/activity", response_model=ActiveThreadsResponse)
+async def threads_activity(
+    ids: str = Query(..., description="Comma-separated post IDs"),
+    window_hours: int = Query(default=24, ge=1, le=720),
+) -> ActiveThreadsResponse:
+    """
+    Return activity data (velocity, recent comments, impression estimate)
+    for a specific set of post IDs — the same posts shown on the results page.
+    """
+    _require_pool()
+    post_ids = [i.strip() for i in ids.split(",") if i.strip()]
+    if not post_ids:
+        raise HTTPException(status_code=422, detail="No valid IDs provided")
+    return await posts_repo.get_threads_activity(post_ids=post_ids, window_hours=window_hours)
 
 
 @router.get("/{thread_id}", response_model=ThreadDetail)
