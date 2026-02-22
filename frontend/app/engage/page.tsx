@@ -121,9 +121,6 @@ export default async function EngagePage({
                 <button className={styles.engagePostButton} disabled>
                   Copy Reply
                 </button>
-                <span className={styles.engagePostNote}>
-                  Reddit API posting coming soon
-                </span>
               </div>
             </div>
           </div>
