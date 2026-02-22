@@ -250,6 +250,29 @@ export async function getActiveThreads(
   return res.json() as Promise<ActiveThreadsResponse>;
 }
 
+export async function draftReply(
+  threadTitle: string,
+  threadSubreddit: string,
+  query: string,
+): Promise<string> {
+  // From the browser, use same-origin proxy to avoid CORS/network errors to backend
+  const url =
+    typeof window !== "undefined"
+      ? "/api/engage/draft-reply"
+      : `${getApiBase()}/engage/draft-reply`;
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ thread_title: threadTitle, thread_subreddit: threadSubreddit, query }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: res.statusText }));
+    throw new Error((err as { detail?: string }).detail ?? "Draft failed");
+  }
+  const data = await res.json() as { draft: string };
+  return data.draft;
+}
+
 /** Convert TopMatch items into RetrievalMatch format for the agent. */
 export function matchesToRetrieval(matches: TopMatch[]): RetrievalMatch[] {
   return matches.map((m) => ({
