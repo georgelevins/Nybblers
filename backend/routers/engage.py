@@ -23,8 +23,9 @@ class DraftReplyResponse(BaseModel):
 @router.post("/draft-reply", response_model=DraftReplyResponse)
 def draft_reply(req: DraftReplyRequest) -> DraftReplyResponse:
     """
-    Generate an AI-drafted Reddit reply for the given thread.
-    Uses Claude to write a genuine, non-promotional reply that adds value.
+    Generate an AI-drafted Reddit reply where the user recommends their own product.
+    Uses Claude with a prompt that centers on the user's input (req.query = business idea/product)
+    and writes a first-person reply that mentions/recommends that product in the thread.
     """
     system = (
         "You are writing a Reddit reply where the user is recommending their own product or business to someone in the thread. "

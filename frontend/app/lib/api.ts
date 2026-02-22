@@ -234,14 +234,18 @@ export async function getActiveThreads(
   minComments = 3,
   limit = 20,
 ): Promise<ActiveThreadsResponse | null> {
-  const base = getApiBase();
   const params = new URLSearchParams({
     q: query.trim(),
     window_hours: String(windowHours),
     min_comments: String(minComments),
     limit: String(limit),
   });
-  const res = await fetch(`${base}/search/active-threads?${params}`);
+  // Use same-origin proxy so server (SSR) and client can reach backend via Next API route
+  const url =
+    typeof window !== "undefined"
+      ? `/api/engage/active-threads?${params}`
+      : `${(process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000").replace(/\/$/, "")}/api/engage/active-threads?${params}`;
+  const res = await fetch(url);
   if (res.status === 503) return null; // DB not available — caller shows empty state
   if (!res.ok) {
     const err = await res.json().catch(() => ({ detail: res.statusText }));
