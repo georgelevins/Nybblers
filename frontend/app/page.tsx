@@ -16,7 +16,7 @@ export default function Home() {
           <p className={styles.tagline}>Where Ideas Meet Discussion</p>
 
           <p className={styles.heroSupport}>
-            Track market buzz, measure demand momentum, and discover conversations where your
+            Track market buzz, measure demand momentum and discover conversations where your
             next customers are already talking.
           </p>
 
@@ -38,7 +38,11 @@ export default function Home() {
         <div className={styles.sectionInner}>
           <h2 className={styles.sectionTitle}>From Discussion to Direction</h2>
           <p className={styles.sectionText}>
-            Remand helps founders and growth teams turn noisy threads into clear next actions.
+            Remand turns online noise into your next winning move. 
+            <br></br>Our AI cuts through scattered threads, comments, and discussions to reveal high-intent opportunities.
+            So you know exactly what to build, launch, or fix—before your competitors do.
+            <br></br><br></br>
+            <strong>Build smarter. Grow faster.</strong>
           </p>
           <div className={styles.imageFrame}>
             <FadeInOnView>
@@ -59,7 +63,14 @@ export default function Home() {
         <div className={styles.sectionInner}>
           <h2 className={styles.sectionTitle}>Growth Momentum Preview</h2>
           <p className={styles.sectionText}>
-            See how often a topic is discussed over time and spot when momentum starts to accelerate.
+            Most opportunities don’t announce themselves. They surface quietly through small, scattered conversations that slowly begin to cluster.
+
+            <br></br>Growth Momentum maps that evolution in real time. It shows you when interest shifts from isolated curiosity to collective momentum.
+
+            By identifying acceleration early, you gain something most teams never have: <strong>Timing.</strong>
+            <br></br><br></br>
+            <em>You’re not reacting to trends.
+            You’re entering before they peak.</em>
           </p>
 
           <div className={styles.chartCard}>
