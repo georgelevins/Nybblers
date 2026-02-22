@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import styles from "@/app/redditdemand.module.css";
-import LineChart from "./LineChart";
+import InteractiveLineChart from "./InteractiveLineChart";
 import type { GrowthData, TimePoint, TopMatch } from "@/app/lib/api";
 import {
   MONTHLY_TOPIC_MENTIONS,
@@ -25,6 +25,13 @@ type ResultsWorkspaceProps = {
 type SubredditStat = {
   name: string;
   mentions: number;
+};
+
+type ScoreFactor = {
+  key: "growth" | "intent" | "evergreen" | "engagement";
+  label: string;
+  value: number;
+  weight: number;
 };
 
 const HISTORY_KEY = "remand-query-history";
@@ -51,6 +58,10 @@ function resultsHref(query: string) {
 
 function formatPercent(value: number): string {
   return `${value.toFixed(1)}%`;
+}
+
+function clampScore(value: number): number {
+  return Math.max(0, Math.min(100, value));
 }
 
 function normalizeSubredditStats(source: Record<string, string[]>): SubredditStat[] {
@@ -143,6 +154,7 @@ export default function ResultsWorkspace({
       : growthData.weekly.length > 0
         ? growthData.weekly
         : MONTHLY_TOPIC_MENTIONS;
+  const [momentumWindow, setMomentumWindow] = useState<number | null>(null);
 
   const feedbackMatches = (topMatches.length > 0 ? topMatches : FALLBACK_MATCHES).slice(0, 10);
 
@@ -158,13 +170,73 @@ export default function ResultsWorkspace({
   const maxSubredditMentions = subredditStats[0]?.mentions ?? 1;
 
   const trendTotal = trendPoints.reduce((sum, item) => sum + item.value, 0);
-  const momentumGrowth = getGrowthRate(momentumPoints);
+  const defaultMomentumWindow = Math.min(18, Math.max(1, momentumPoints.length));
+  const minMomentumWindow = Math.min(4, Math.max(1, momentumPoints.length));
+  const selectedMomentumWindow = momentumWindow ?? defaultMomentumWindow;
+  const effectiveMomentumWindow = Math.min(
+    Math.max(minMomentumWindow, selectedMomentumWindow),
+    Math.max(1, momentumPoints.length),
+  );
+  const filteredMomentumPoints = momentumPoints.slice(-effectiveMomentumWindow);
+  const filteredMomentumGrowth = getGrowthRate(filteredMomentumPoints);
+  const momentumStartLabel = filteredMomentumPoints[0]?.label ?? "";
+  const momentumEndLabel = filteredMomentumPoints[filteredMomentumPoints.length - 1]?.label ?? "";
+  const trendGrowthRate = getGrowthRate(trendPoints);
+
+  const intentPercent = clampScore(
+    feedbackMatches.length > 0
+      ? (feedbackMatches.reduce((sum, item) => sum + item.similarity, 0) / feedbackMatches.length) * 100
+      : 0,
+  );
+
+  const evergreenRatio = trendPoints.length > 1
+    ? trendPoints
+      .slice(1)
+      .reduce(
+        (count, point, index) =>
+          point.value >= trendPoints[index].value ? count + 1 : count,
+        0,
+      ) / (trendPoints.length - 1)
+    : 0;
+  const evergreenPosts = feedbackMatches.length > 0
+    ? feedbackMatches.filter((item) => item.kind === "post").length / feedbackMatches.length
+    : 0;
+  const evergreenPercent = clampScore((evergreenRatio * 100) * 0.65 + (evergreenPosts * 100) * 0.35);
+
+  const averageMentions = trendPoints.length > 0 ? trendTotal / trendPoints.length : 0;
+  const engagementVolume = clampScore((averageMentions / 120) * 100);
+  const engagementBreadth = clampScore((subredditStats.length / 6) * 100);
+  const engagementPercent = clampScore((engagementVolume * 0.7) + (engagementBreadth * 0.3));
+
+  const growthPercent = clampScore((trendGrowthRate / 160) * 100);
+
+  const scoreFactors: ScoreFactor[] = [
+    { key: "growth", label: "Growth rate", value: growthPercent, weight: 0.35 },
+    { key: "intent", label: "Intent %", value: intentPercent, weight: 0.3 },
+    { key: "evergreen", label: "Evergreen threads", value: evergreenPercent, weight: 0.2 },
+    { key: "engagement", label: "Engagement", value: engagementPercent, weight: 0.15 },
+  ];
+
+  const opportunityScore = Math.round(
+    scoreFactors.reduce((sum, factor) => sum + (factor.value * factor.weight), 0),
+  );
+
+  const hasExpandedCard = expandedCard !== null;
 
   const layoutStyle = {
     gridTemplateColumns: collapsed
       ? "0px minmax(0, 1fr)"
       : `${sidebarWidth}px minmax(0, 1fr)`,
-  };
+    ["--expanded-left" as string]: collapsed ? "0.95rem" : `${sidebarWidth + 14}px`,
+  } as CSSProperties;
+
+  function cardClass(cardId: CardId) {
+    return `${styles.resultsDataCard} ${
+      expandedCard === cardId ? styles.resultsDataCardExpanded : ""
+    } ${
+      hasExpandedCard && expandedCard !== cardId ? styles.resultsDataCardMinimized : ""
+    }`.trim();
+  }
 
   return (
     <div
@@ -262,12 +334,12 @@ export default function ResultsWorkspace({
         </div>
 
         <div className={styles.resultsPanelsViewport}>
-          <div className={styles.resultsPanelsGrid}>
-            <article
-              className={`${styles.resultsDataCard} ${expandedCard === "trend" ? styles.resultsDataCardExpanded : ""}`.trim()}
-            >
+          <div
+            className={`${styles.resultsPanelsGrid} ${hasExpandedCard ? styles.resultsPanelsGridHasExpanded : ""}`.trim()}
+          >
+            <article className={cardClass("trend")}>
               <div className={styles.resultsDataCardHead}>
-                <h2 className={styles.resultsDataCardTitle}>Graph Trend</h2>
+                <h2 className={styles.resultsDataCardTitle}>Buyer Readiness Score</h2>
                 <button
                   type="button"
                   className={styles.resultsDataCardToggle}
@@ -280,22 +352,70 @@ export default function ResultsWorkspace({
                 </button>
               </div>
               <p className={styles.resultsDataCardMeta}>
-                Total mentions in timeline: <strong>{trendTotal}</strong>
+                Opportunity Score: <strong>{opportunityScore}/100</strong>
               </p>
               {expandedCard === "trend" && (
                 <p className={styles.resultsDataCardDescription}>
-                  This trend line shows how frequently the topic appears in Reddit conversations over time.
-                  Use this to spot sustained demand versus one-off spikes.
+                  Composite score for buyer readiness based on growth rate, intent %, evergreen threads, and
+                  engagement.
                 </p>
               )}
-              <div className={styles.chartShell}>
-                <LineChart points={trendPoints} xLabel="Time" yLabel="Mentions" />
+
+              <div className={styles.readinessLayout}>
+                <div className={styles.readinessGaugeWrap}>
+                  <div
+                    className={styles.readinessGauge}
+                    style={{
+                      background: `conic-gradient(#e35900 ${(opportunityScore / 100) * 360}deg, #f4dcc7 0deg)`,
+                    }}
+                    aria-label={`Opportunity score ${opportunityScore} out of 100`}
+                  >
+                    <div className={styles.readinessGaugeInner}>
+                      <span className={styles.readinessGaugeValue}>{opportunityScore}</span>
+                      <span className={styles.readinessGaugeOutOf}>/100</span>
+                    </div>
+                  </div>
+                  <p className={styles.readinessGaugeLabel}>Buyer Readiness Meter</p>
+                </div>
+
+                <div className={styles.readinessFactors}>
+                  {scoreFactors.map((factor) => (
+                    <div key={factor.key} className={styles.readinessFactorRow}>
+                      <div className={styles.readinessFactorHead}>
+                        <span>{factor.label}</span>
+                        <span>{Math.round(factor.value)}%</span>
+                      </div>
+                      <div className={styles.readinessFactorTrack}>
+                        <div
+                          className={styles.readinessFactorFill}
+                          style={{ width: `${Math.max(6, factor.value)}%` }}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
+
+              {expandedCard === "trend" && (
+                <div className={styles.readinessExpandedNote}>
+                  <p>
+                    This score estimates how likely people in this market are to actively look for — and
+                    pay for — a solution like yours.
+                  </p>
+                  <p>Weighted to prioritize buying signals.</p>
+                  <p>A high score means:</p>
+                  <ul>
+                    <li>Strong, growing demand</li>
+                    <li>Frequent buying-intent discussions</li>
+                    <li>Long-lasting discovery via search</li>
+                    <li>Consistent community engagement</li>
+                  </ul>
+                  <p>Scores above 75 indicate strong early-market opportunities.</p>
+                </div>
+              )}
             </article>
 
-            <article
-              className={`${styles.resultsDataCard} ${expandedCard === "subreddits" ? styles.resultsDataCardExpanded : ""}`.trim()}
-            >
+            <article className={cardClass("subreddits")}>
               <div className={styles.resultsDataCardHead}>
                 <h2 className={styles.resultsDataCardTitle}>Mentions by Subreddit</h2>
                 <button
@@ -341,9 +461,7 @@ export default function ResultsWorkspace({
               </div>
             </article>
 
-            <article
-              className={`${styles.resultsDataCard} ${expandedCard === "feedback" ? styles.resultsDataCardExpanded : ""}`.trim()}
-            >
+            <article className={cardClass("feedback")}>
               <div className={styles.resultsDataCardHead}>
                 <h2 className={styles.resultsDataCardTitle}>Best Feedback</h2>
                 <button
@@ -396,9 +514,7 @@ export default function ResultsWorkspace({
               </ol>
             </article>
 
-            <article
-              className={`${styles.resultsDataCard} ${expandedCard === "momentum" ? styles.resultsDataCardExpanded : ""}`.trim()}
-            >
+            <article className={cardClass("momentum")}>
               <div className={styles.resultsDataCardHead}>
                 <h2 className={styles.resultsDataCardTitle}>Growth Momentum</h2>
                 <button
@@ -413,15 +529,39 @@ export default function ResultsWorkspace({
                 </button>
               </div>
               <p className={styles.resultsDataCardMeta}>
-                Growth rate: <strong>{momentumGrowth >= 0 ? "+" : ""}{momentumGrowth.toFixed(1)}%</strong>
+                Growth rate: <strong>{filteredMomentumGrowth >= 0 ? "+" : ""}{filteredMomentumGrowth.toFixed(1)}%</strong>
               </p>
               {expandedCard === "momentum" && (
                 <p className={styles.resultsDataCardDescription}>
                   Momentum highlights acceleration, not just volume. Rising slope indicates growing market urgency.
                 </p>
               )}
+              {momentumPoints.length > 1 && (
+                <div className={styles.sliderWrap}>
+                  <label htmlFor="momentum-window" className={styles.sliderLabel}>
+                    Time Filter: Last {effectiveMomentumWindow} periods
+                  </label>
+                  <input
+                    id="momentum-window"
+                    type="range"
+                    min={minMomentumWindow}
+                    max={momentumPoints.length}
+                    step={1}
+                    value={effectiveMomentumWindow}
+                    onChange={(event) => setMomentumWindow(Number(event.target.value))}
+                    className={styles.rangeInput}
+                  />
+                  <p className={styles.sliderRange}>
+                    Showing {momentumStartLabel} to {momentumEndLabel}
+                  </p>
+                </div>
+              )}
               <div className={styles.chartShell}>
-                <LineChart points={momentumPoints} xLabel="Time" yLabel="Momentum" />
+                <InteractiveLineChart
+                  points={filteredMomentumPoints}
+                  xLabel="Time"
+                  yLabel="Momentum"
+                />
               </div>
             </article>
           </div>
