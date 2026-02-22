@@ -265,11 +265,19 @@ export async function draftReply(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ thread_title: threadTitle, thread_subreddit: threadSubreddit, query }),
   });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({ detail: res.statusText }));
-    throw new Error((err as { detail?: string }).detail ?? "Draft failed");
+  const raw = await res.text();
+  let data: { draft?: string; detail?: string };
+  try {
+    data = raw ? (JSON.parse(raw) as { draft?: string; detail?: string }) : {};
+  } catch {
+    throw new Error(res.ok ? "Invalid response from server" : (raw?.slice(0, 200) || res.statusText));
   }
-  const data = await res.json() as { draft: string };
+  if (!res.ok) {
+    throw new Error(data.detail ?? res.statusText ?? "Draft failed");
+  }
+  if (typeof data.draft !== "string") {
+    throw new Error("Invalid response: missing draft");
+  }
   return data.draft;
 }
 
