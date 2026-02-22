@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 const BACKEND_BASE =
-  (process.env.NEXT_PUBLIC_API_URL ?? process.env.API_URL ?? "").trim() ||
+  (process.env.API_URL ?? process.env.NEXT_PUBLIC_API_URL ?? "").trim() ||
   "http://localhost:8000";
 
 export async function GET(request: NextRequest) {

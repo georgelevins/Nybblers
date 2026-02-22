@@ -1,13 +1,21 @@
 /**
  * Backend API client for Remand.
- * Base URL is read from NEXT_PUBLIC_API_URL (set in .env.local).
+ *
+ * Preferred pattern: browser calls same-origin Next.js API routes (/api/agent/run,
+ * /api/search/top-matches, /api/engage/active-threads, /api/engage/draft-reply).
+ * Those route handlers use server-only API_URL to call the backend (avoids mixed
+ * content on HTTPS).
+ *
+ * - Production (Vercel): set API_URL only; do not set NEXT_PUBLIC_API_URL.
+ * - Local dev: set API_URL=http://localhost:8000 in .env.local; NEXT_PUBLIC_API_URL
+ *   is optional (used only for SSR or any remaining direct backend calls).
  */
 
 export function getApiBase(): string {
   if (typeof window !== "undefined") {
     return (process.env.NEXT_PUBLIC_API_URL ?? "").trim() || "http://localhost:8000";
   }
-  return process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+  return process.env.API_URL ?? process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 }
 
 // ---- Shared types ----
@@ -155,9 +163,12 @@ export async function getTopMatches(
   query: string,
   limit = 10,
 ): Promise<TopMatch[]> {
-  const base = getApiBase();
-  const params = new URLSearchParams({ q: query.trim(), limit: String(limit) });
-  const res = await fetch(`${base}/search/top-matches?${params}`);
+  // Client: use same-origin proxy to avoid mixed content (HTTPS page → HTTP backend)
+  const url =
+    typeof window !== "undefined"
+      ? `/api/search/top-matches?${new URLSearchParams({ q: query.trim(), limit: String(limit) })}`
+      : `${getApiBase()}/search/top-matches?${new URLSearchParams({ q: query.trim(), limit: String(limit) })}`;
+  const res = await fetch(url);
   if (!res.ok) {
     const err = await res.json().catch(() => ({ detail: res.statusText }));
     throw new Error((err as { detail?: string }).detail ?? "Top matches request failed");
@@ -184,8 +195,9 @@ export async function runAgent(
   ideaText: string,
   retrievalMatches?: RetrievalMatch[],
 ): Promise<AgentResponse> {
-  const base = getApiBase();
-  const res = await fetch(`${base}/agent/run`, {
+  // Client: use same-origin proxy to avoid mixed content (HTTPS page → HTTP backend)
+  const url = typeof window !== "undefined" ? "/api/agent/run" : `${getApiBase()}/agent/run`;
+  const res = await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
