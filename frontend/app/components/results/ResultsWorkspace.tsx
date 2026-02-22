@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import styles from "@/app/redditdemand.module.css";
-import LineChart from "./LineChart";
+import InteractiveLineChart from "./InteractiveLineChart";
 import type { GrowthData, TimePoint, TopMatch } from "@/app/lib/api";
 import {
   MONTHLY_TOPIC_MENTIONS,
@@ -169,7 +169,20 @@ export default function ResultsWorkspace({
   const maxSubredditMentions = subredditStats[0]?.mentions ?? 1;
 
   const trendTotal = trendPoints.reduce((sum, item) => sum + item.value, 0);
-  const momentumGrowth = getGrowthRate(momentumPoints);
+  const [momentumWindow, setMomentumWindow] = useState<number | null>(null);
+
+  const minMomentumWindow = Math.min(4, Math.max(1, momentumPoints.length));
+  const defaultMomentumWindow = Math.min(18, Math.max(1, momentumPoints.length));
+  const selectedMomentumWindow = momentumWindow ?? defaultMomentumWindow;
+  const effectiveMomentumWindow = Math.min(
+    Math.max(minMomentumWindow, selectedMomentumWindow),
+    Math.max(1, momentumPoints.length),
+  );
+  const filteredMomentumPoints = momentumPoints.slice(-effectiveMomentumWindow);
+  const filteredMomentumGrowth = getGrowthRate(filteredMomentumPoints);
+  const momentumStartLabel = filteredMomentumPoints[0]?.label ?? "";
+  const momentumEndLabel =
+    filteredMomentumPoints[filteredMomentumPoints.length - 1]?.label ?? "";
   const trendGrowthRate = getGrowthRate(trendPoints);
 
   const intentPercent = clampScore(
@@ -375,6 +388,24 @@ export default function ResultsWorkspace({
                   ))}
                 </div>
               </div>
+
+              {expandedCard === "trend" && (
+                <div className={styles.readinessExpandedNote}>
+                  <p>
+                    This score estimates how likely people in this market are to actively look for — and
+                    pay for — a solution like yours.
+                  </p>
+                  <p>Weighted to prioritize buying signals.</p>
+                  <p>A high score means:</p>
+                  <ul>
+                    <li>Strong, growing demand</li>
+                    <li>Frequent buying-intent discussions</li>
+                    <li>Long-lasting discovery via search</li>
+                    <li>Consistent community engagement</li>
+                  </ul>
+                  <p>Scores above 75 indicate strong early-market opportunities.</p>
+                </div>
+              )}
             </article>
 
             <article className={cardClass("subreddits")}>
@@ -491,15 +522,39 @@ export default function ResultsWorkspace({
                 </button>
               </div>
               <p className={styles.resultsDataCardMeta}>
-                Growth rate: <strong>{momentumGrowth >= 0 ? "+" : ""}{momentumGrowth.toFixed(1)}%</strong>
+                Growth rate: <strong>{filteredMomentumGrowth >= 0 ? "+" : ""}{filteredMomentumGrowth.toFixed(1)}%</strong>
               </p>
               {expandedCard === "momentum" && (
                 <p className={styles.resultsDataCardDescription}>
                   Momentum highlights acceleration, not just volume. Rising slope indicates growing market urgency.
                 </p>
               )}
+              {momentumPoints.length > 1 && (
+                <div className={styles.sliderWrap}>
+                  <label htmlFor="momentum-window" className={styles.sliderLabel}>
+                    Time Filter: Last {effectiveMomentumWindow} periods
+                  </label>
+                  <input
+                    id="momentum-window"
+                    type="range"
+                    min={minMomentumWindow}
+                    max={momentumPoints.length}
+                    step={1}
+                    value={effectiveMomentumWindow}
+                    onChange={(event) => setMomentumWindow(Number(event.target.value))}
+                    className={styles.rangeInput}
+                  />
+                  <p className={styles.sliderRange}>
+                    Showing {momentumStartLabel} to {momentumEndLabel}
+                  </p>
+                </div>
+              )}
               <div className={styles.chartShell}>
-                <LineChart points={momentumPoints} xLabel="Time" yLabel="Momentum" />
+                <InteractiveLineChart
+                  points={filteredMomentumPoints}
+                  xLabel="Time"
+                  yLabel="Momentum"
+                />
               </div>
             </article>
           </div>
