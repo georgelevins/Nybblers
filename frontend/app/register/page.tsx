@@ -51,14 +51,16 @@ export default function RegisterPage() {
           <aside className={styles.overviewPanel}>
             <h2>What Remand gives you</h2>
             <p>
-              Find high-intent Reddit threads, validate your startup demand, and focus on
-              opportunities that still attract ongoing comments.
+              Turn one search into a full market report: buyer readiness, momentum, saturation,
+              top feedback, and the people already discussing your idea.
             </p>
             <ul className={styles.overviewList}>
-              <li>Demand View sorted by semantic relevance.</li>
-              <li>Opportunity View sorted by heat score and activity.</li>
-              <li>Google-ranking signals to find evergreen threads.</li>
-              <li>Alerts for new matching posts.</li>
+              <li>Buyer Readiness Score with weighted demand signals.</li>
+              <li>Interactive Growth Momentum chart with live hover details and time filter.</li>
+              <li>Market Saturation Curve: need/problem mentions vs existing-tool mentions.</li>
+              <li>Best Feedback: top relevant comments with direct Reddit links.</li>
+              <li>People by subreddit with one-click username ZIP export.</li>
+              <li>Explore with AI to brainstorm and validate next moves.</li>
             </ul>
           </aside>
         </div>
