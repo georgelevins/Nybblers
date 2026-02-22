@@ -73,6 +73,24 @@ export type RetrievalMatch = {
   metadata?: Record<string, unknown>;
 };
 
+/** Convert search TopMatch[] to agent RetrievalMatch[] for runAgent. */
+export function topMatchesToRetrievalMatches(matches: TopMatch[]): RetrievalMatch[] {
+  return matches.map((m) => ({
+    id: m.id,
+    title: (m.body || m.subreddit || "").slice(0, 200) || m.subreddit || m.id,
+    text: m.body || "",
+    source: "reddit" as const,
+    metadata: {
+      subreddit: m.subreddit,
+      author: m.author,
+      score: m.score,
+      url: m.url,
+      similarity: m.similarity,
+      kind: m.kind,
+    },
+  }));
+}
+
 // ---- Search API ----
 
 export type SearchResultItem = {

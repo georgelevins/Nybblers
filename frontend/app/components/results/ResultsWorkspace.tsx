@@ -397,8 +397,8 @@ export default function ResultsWorkspace({
             </button>
           </form>
 
-          <Link href="/explore-ai" className={styles.exploreAiLink}>
-            Explore with AI
+          <Link href={query ? `/explore-ai?q=${encodeURIComponent(query)}` : "/explore-ai"} className={styles.exploreAiLink}>
+            Enhance idea with AI
           </Link>
         </div>
 

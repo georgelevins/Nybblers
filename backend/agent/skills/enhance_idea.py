@@ -1,6 +1,7 @@
 """
 AI Enhance: brainstorm up to 5 better-but-similar ideas, test each against Remand search.
 Only suggest one if it has greater Reddit traction; otherwise report "your idea is well optimised".
+When the Remand DB is unavailable, we still run Claude once and return the enhanced idea (no traction comparison).
 """
 
 import asyncio
@@ -21,17 +22,14 @@ def _traction_score(matches: list[Any]) -> float:
     return sum(getattr(m, "similarity", 0.0) for m in matches)
 
 
-def enhance_idea_skill(request: AgentRequest) -> AgentResponse:
+def _run_with_db(request: AgentRequest) -> AgentResponse | None:
     """
-    Pipeline: brainstorm -> back_idea (test traction) up to 5 times.
-    Present an enhanced idea only if one attempt has strictly better traction.
-    If none do after 5 tries, return "your idea is well optimised".
+    Run full pipeline using Remand DB for traction. Returns None if DB is unavailable.
     """
     system = get_prompt("enhance_idea", "v1")
     base_user = build_user_message(request, use_mock_if_empty=False)
 
     # Get original traction once (required to compare)
-    original_traction = 0.0
     try:
         from repositories import posts as posts_repo
 
@@ -47,11 +45,8 @@ def enhance_idea_skill(request: AgentRequest) -> AgentResponse:
             original_traction = _traction_score(orig_matches)
         finally:
             loop.close()
-    except Exception as e:
-        base_response = normalize_llm_output("enhance_idea", {"outputs": {}, "evidence": []})
-        base_response.outputs["suggested"] = False
-        base_response.outputs["enhance_error"] = f"Could not test demand: {e!s}"
-        return base_response
+    except Exception:
+        return None
 
     # Brainstorm -> back_idea up to 5 times; stop when one beats original
     winner_idea: str | None = None
@@ -94,9 +89,9 @@ def enhance_idea_skill(request: AgentRequest) -> AgentResponse:
             winner_rationale = (raw.get("outputs") or {}).get("rationale") or ""
             break
 
-    # Build response
     base_response = normalize_llm_output("enhance_idea", last_raw)
     base_response.outputs["original_traction"] = round(original_traction, 2)
+    base_response.outputs["db_used"] = True
 
     if winner_idea is not None:
         base_response.outputs["suggested"] = True
@@ -113,3 +108,47 @@ def enhance_idea_skill(request: AgentRequest) -> AgentResponse:
         base_response.outputs["rationale"] = ""
 
     return base_response
+
+
+def _run_without_db(request: AgentRequest) -> AgentResponse:
+    """
+    DB unavailable: run Claude once with request context (and optional mock retrieval),
+    return the enhanced idea without traction comparison.
+    """
+    system = get_prompt("enhance_idea", "v1")
+    base_user = build_user_message(request, use_mock_if_empty=True)
+    raw = complete_json(system=system, user=base_user)
+    base_response = normalize_llm_output("enhance_idea", raw)
+    base_response.outputs["db_used"] = False
+    base_response.outputs["original_traction"] = None
+    base_response.outputs["enhanced_traction"] = None
+
+    enhanced_idea_text = ""
+    if isinstance(raw.get("outputs"), dict):
+        enhanced_idea_text = (raw["outputs"].get("enhanced_idea_text") or "").strip()
+    rationale = (raw.get("outputs") or {}).get("rationale") or ""
+
+    if enhanced_idea_text:
+        base_response.outputs["suggested"] = True
+        base_response.outputs["enhanced_idea_text"] = enhanced_idea_text
+        base_response.outputs["rationale"] = rationale
+    else:
+        base_response.outputs["suggested"] = False
+        base_response.outputs["enhanced_idea_text"] = None
+        base_response.outputs["rationale"] = ""
+        base_response.outputs["well_optimised_message"] = (
+            "We couldn't generate an enhanced variant this time. Try rephrasing your idea."
+        )
+
+    return base_response
+
+
+def enhance_idea_skill(request: AgentRequest) -> AgentResponse:
+    """
+    Pipeline: when Remand DB is available, brainstorm and compare traction; otherwise
+    run Claude once and return the enhanced idea (referencing request/retrieval context).
+    """
+    response = _run_with_db(request)
+    if response is not None:
+        return response
+    return _run_without_db(request)

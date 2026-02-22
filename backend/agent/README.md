@@ -26,7 +26,7 @@ Action-based orchestration layer for the Remand product. **The agent always deci
 
 ## Env
 
-Set `OPENAI_API_KEY` in backend `.env`. Without it, `POST /agent/run` returns 503.
+Set `ANTHROPIC_API_KEY` in backend `.env`. Without it, `POST /agent/run` returns 503.
 
 ## Testing without other infra
 

@@ -990,6 +990,46 @@
   font-size: 0.92rem;
 }
 
+.enhanceAiWrap {
+  width: min(640px, calc(100% - 2rem));
+  text-align: center;
+}
+
+.enhanceAiWrap .agentResult {
+  text-align: left;
+  margin-top: 1.5rem;
+}
+
+.enhanceAiLoading {
+  margin-top: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  color: #8e5433;
+  font-size: 0.95rem;
+}
+
+.enhanceAiSpinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid rgba(208, 79, 0, 0.2);
+  border-top-color: #d04f00;
+  border-radius: 50%;
+  animation: enhanceAiSpin 0.8s linear infinite;
+}
+
+@keyframes enhanceAiSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.enhanceAiResult {
+  width: 100%;
+  margin-top: 0.5rem;
+}
+
 .resultsWorkspace {
   min-height: 100vh;
   height: 100vh;

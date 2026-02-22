@@ -60,7 +60,7 @@ export default function RegisterPage() {
               <li>Market Saturation Curve: need/problem mentions vs existing-tool mentions.</li>
               <li>Best Feedback: top relevant comments with direct Reddit links.</li>
               <li>People by subreddit with one-click username ZIP export.</li>
-              <li>Explore with AI to brainstorm and validate next moves.</li>
+              <li>Enhance idea with AI to refine your idea against Remand demand.</li>
             </ul>
           </aside>
         </div>
